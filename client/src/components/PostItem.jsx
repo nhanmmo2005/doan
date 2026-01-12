@@ -1,6 +1,13 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import CommentBox from "./CommentBox";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faUpRightFromSquare,
+  faLocationDot,
+  faShare,
+} from "@fortawesome/free-solid-svg-icons";
+import { faThumbsUp, faCommentDots } from "@fortawesome/free-regular-svg-icons";
 
 function fmtTime(ts) {
   try {
@@ -26,7 +33,6 @@ export default function PostItem({ post, onLike, children }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
     } catch {
-      // fallback
       window.prompt("Copy link bài viết:", postUrl);
     }
   }
@@ -38,7 +44,6 @@ export default function PostItem({ post, onLike, children }) {
 
   return (
     <div className="card post-card">
-      {/* header */}
       <div className="post-head">
         <div className="post-left">
           <div className="avatar">{avatarChar}</div>
@@ -49,19 +54,24 @@ export default function PostItem({ post, onLike, children }) {
 
               <div className="post-head-actions">
                 <Link className="btn-mini" to={`/posts/${post.id}`} title="Mở trang bài viết">
-                  Mở bài ↗
+                  <FontAwesomeIcon icon={faUpRightFromSquare} />
+                  <span>Mở</span>
                 </Link>
               </div>
             </div>
 
             <div className="post-sub truncate">
               <span>{fmtTime(post?.created_at)}</span>
+
               {post?.restaurant_name ? (
                 <>
                   <span className="dot">•</span>
-                  <span className="tag">
-                    📍 {post.restaurant_name}
-                    {post.restaurant_area ? ` (${post.restaurant_area})` : ""}
+                  <span className="tag truncate" title={post.restaurant_name}>
+                    <FontAwesomeIcon icon={faLocationDot} />
+                    <span style={{ marginLeft: 6 }}>
+                      {post.restaurant_name}
+                      {post.restaurant_area ? ` (${post.restaurant_area})` : ""}
+                    </span>
                   </span>
                 </>
               ) : null}
@@ -70,34 +80,33 @@ export default function PostItem({ post, onLike, children }) {
         </div>
       </div>
 
-      {/* content */}
       <div className="post-content">{post?.content}</div>
 
-      {/* media slot */}
       {children}
 
-      {/* stats */}
       <div className="post-stats">
         <div className="muted">{post?.like_count || 0} lượt thích</div>
         <div className="muted">{post?.comment_count || 0} bình luận</div>
       </div>
 
-      {/* actions: Like -> Comment -> Share */}
+      {/* Like → Comment → Share */}
       <div className="post-actions">
         <button type="button" className="act" onClick={() => onLike?.(post.id)}>
-          👍 Like
+          <FontAwesomeIcon icon={faThumbsUp} />
+          <span>Like</span>
         </button>
 
         <button type="button" className="act" onClick={toggleComment}>
-          💬 Comment
+          <FontAwesomeIcon icon={faCommentDots} />
+          <span>Comment</span>
         </button>
 
         <button type="button" className="act" onClick={doShare}>
-          🔗 Share {copied ? "✓" : ""}
+          <FontAwesomeIcon icon={faShare} />
+          <span>{copied ? "Đã copy" : "Share"}</span>
         </button>
       </div>
 
-      {/* comments */}
       {openCmt && (
         <div className="post-comments">
           <CommentBox postId={post.id} inputRef={cmtFocusRef} />

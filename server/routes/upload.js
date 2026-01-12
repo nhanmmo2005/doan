@@ -1,73 +1,68 @@
 const express = require("express");
 const multer = require("multer");
-const path = require("path");
 const crypto = require("crypto");
-const { PutObjectCommand } = require("@aws-sdk/client-s3");
+const path = require("path");
 
 const r2 = require("../r2");
-const auth = require("../middleware/auth");
+const { PutObjectCommand } = require("@aws-sdk/client-s3");
 
 const router = express.Router();
 
+const storage = multer.memoryStorage();
 const upload = multer({
-  storage: multer.memoryStorage(),
+  storage,
   limits: {
-    fileSize: 80 * 1024 * 1024, // 80MB / file (video)
-    files: 10, // tối đa 10 file / bài
-  },
-  fileFilter: (req, file, cb) => {
-    const ok =
-      file.mimetype.startsWith("image/") ||
-      file.mimetype.startsWith("video/");
-    if (!ok) return cb(new Error("Only image/video allowed"));
-    cb(null, true);
+    fileSize: 50 * 1024 * 1024, // 50MB (tùy bạn)
+    files: 10,
   },
 });
 
-// POST /api/upload  (multi files)
-router.post("/", auth, upload.array("files", 10), async (req, res) => {
+// helper: xác định mediaType
+function getMediaType(mimetype) {
+  if (!mimetype) return "image";
+  if (mimetype.startsWith("video/")) return "video";
+  return "image";
+}
+
+router.post("/", upload.array("files", 10), async (req, res) => {
   try {
-    if (!req.files || !req.files.length) {
-      return res.status(400).json({ msg: "No files" });
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ msg: "Không có file upload" });
     }
 
-    const base = (process.env.R2_PUBLIC_BASE_URL || "").replace(/\/+$/, "");
-    if (!base.startsWith("https://")) {
-      return res.status(500).json({ msg: "R2_PUBLIC_BASE_URL invalid" });
+    const bucket = process.env.R2_BUCKET;
+    const publicBase = process.env.R2_PUBLIC_BASE_URL; // vd: https://pub-xxxx.r2.dev
+    if (!bucket || !publicBase) {
+      return res.status(500).json({ msg: "Thiếu R2_BUCKET hoặc R2_PUBLIC_BASE_URL" });
     }
 
     const results = await Promise.all(
-      req.files.map(async (f, idx) => {
+      req.files.map(async (f) => {
         const ext = path.extname(f.originalname || "");
-        const safeExt =
-          ext || (f.mimetype.startsWith("video/") ? ".mp4" : ".png");
-        const prefix = f.mimetype.startsWith("video/") ? "videos" : "images";
-        const key = `posts/${prefix}/${Date.now()}-${crypto
-          .randomBytes(8)
-          .toString("hex")}-${idx}${safeExt}`;
+        const rand = crypto.randomBytes(8).toString("hex");
+        const key = `uploads/${Date.now()}-${rand}${ext}`;
 
-        await r2.send(
-          new PutObjectCommand({
-            Bucket: process.env.R2_BUCKET,
-            Key: key,
-            Body: f.buffer,
-            ContentType: f.mimetype,
-          })
-        );
+        const cmd = new PutObjectCommand({
+          Bucket: bucket,
+          Key: key,
+          Body: f.buffer,
+          ContentType: f.mimetype,
+        });
+
+        await r2.send(cmd);
 
         return {
-          url: `${base}/${key}`,
-          mediaType: f.mimetype.startsWith("video/") ? "video" : "image",
-          sortOrder: idx,
-          mime: f.mimetype,
+          url: `${publicBase}/${key}`,
+          mediaType: getMediaType(f.mimetype),
+          key,
         };
       })
     );
 
-    res.json({ items: results });
+    res.json(results);
   } catch (e) {
     console.error("R2 UPLOAD ERROR:", e);
-    res.status(500).json({ msg: "Upload failed" });
+    res.status(500).json({ msg: "Upload thất bại" });
   }
 });
 

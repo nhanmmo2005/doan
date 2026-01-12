@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { uploadMedia } from "../api/upload";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faPhotoFilm,
+  faTriangleExclamation,
+  faUtensils,
+  faPaperPlane,
+} from "@fortawesome/free-solid-svg-icons";
 
 const MAX_FILES = 10;
 
@@ -17,19 +24,25 @@ function MediaPreview({ previews, onRemove }) {
 
   return (
     <div className="composer-preview">
-      {/* Videos (inline, 1 dòng / video) */}
+      {/* Videos: 1 dòng / video */}
       {videos.map((v, idx) => (
         <div className="preview-video" key={`v-${idx}`}>
           <video controls preload="metadata">
             <source src={v.url} />
           </video>
-          <button type="button" className="preview-remove" onClick={() => onRemove(v.file)}>
-            ✕
+          <button
+            type="button"
+            className="preview-remove"
+            onClick={() => onRemove(v.file)}
+            aria-label="Bỏ video"
+            title="Bỏ"
+          >
+            ×
           </button>
         </div>
       ))}
 
-      {/* Images grid (FB-ish) */}
+      {/* Images grid */}
       {images.length > 0 && (
         <div
           className={[
@@ -45,8 +58,14 @@ function MediaPreview({ previews, onRemove }) {
             return (
               <div className="preview-tile" key={`i-${i}`}>
                 <img src={img.url} alt="" />
-                <button type="button" className="preview-remove" onClick={() => onRemove(img.file)}>
-                  ✕
+                <button
+                  type="button"
+                  className="preview-remove"
+                  onClick={() => onRemove(img.file)}
+                  aria-label="Bỏ ảnh"
+                  title="Bỏ"
+                >
+                  ×
                 </button>
                 {more && <div className="preview-more">+{images.length - 4}</div>}
               </div>
@@ -60,7 +79,7 @@ function MediaPreview({ previews, onRemove }) {
 
 export default function Composer({ restaurants, onSubmit, loading }) {
   const [content, setContent] = useState("");
-  const [restaurantId, setRestaurantId] = useState(""); // tag quán (optional - sau này dùng)
+  const [restaurantId, setRestaurantId] = useState("");
   const [files, setFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [err, setErr] = useState("");
@@ -69,7 +88,6 @@ export default function Composer({ restaurants, onSubmit, loading }) {
   const fileRef = useRef(null);
   const areaRef = useRef(null);
 
-  // build preview URLs
   useEffect(() => {
     previews.forEach((p) => URL.revokeObjectURL(p.url));
     setPreviews(buildPreviews(files));
@@ -81,7 +99,6 @@ export default function Composer({ restaurants, onSubmit, loading }) {
   function addFiles(newFiles) {
     const arr = Array.from(newFiles || []);
     if (!arr.length) return;
-
     const merged = [...files, ...arr].slice(0, MAX_FILES);
     setFiles(merged);
   }
@@ -94,7 +111,6 @@ export default function Composer({ restaurants, onSubmit, loading }) {
     fileRef.current?.click();
   }
 
-  // Ctrl+V paste ảnh
   function onPaste(e) {
     const items = e.clipboardData?.items || [];
     const pasted = [];
@@ -118,15 +134,14 @@ export default function Composer({ restaurants, onSubmit, loading }) {
 
       if (files.length) {
         setUploading(true);
-        // upload 1 lần cho tất cả files
         media = await uploadMedia(files);
       }
 
       await onSubmit({
         type: "status",
         content,
-        media, // <-- quan trọng: feed lấy từ post_media
-        restaurantId: restaurantId || null, // tag quán (optional)
+        media,
+        restaurantId: restaurantId || null,
       });
 
       setContent("");
@@ -150,14 +165,15 @@ export default function Composer({ restaurants, onSubmit, loading }) {
     <div className="card composer-card">
       <div className="composer-head">
         <div className="composer-title">Tạo bài viết</div>
-        <div className="composer-sub">Status / rủ kèo / hỏi quán ngon — kiểu mạng xã hội mini</div>
+        <div className="composer-sub">Status / rủ kèo / hỏi quán ngon — mạng xã hội mini</div>
       </div>
 
       <form onSubmit={handleSubmit} className="composer-form">
-        {/* tag quán (optional) */}
         {!!restaurants?.length && (
           <div className="composer-tag">
-            <span className="label">Gắn quán (tuỳ chọn)</span>
+            <span className="label">
+              <FontAwesomeIcon icon={faUtensils} /> Gắn quán (tuỳ chọn)
+            </span>
             <select value={restaurantId} onChange={(e) => setRestaurantId(e.target.value)}>
               <option value="">-- Chưa chọn --</option>
               {restaurants.map((r) => (
@@ -184,7 +200,6 @@ export default function Composer({ restaurants, onSubmit, loading }) {
           </div>
         </div>
 
-        {/* preview */}
         {previews.length > 0 && <MediaPreview previews={previews} onRemove={removeFile} />}
 
         <div className="composer-actions">
@@ -198,17 +213,27 @@ export default function Composer({ restaurants, onSubmit, loading }) {
               onChange={(e) => addFiles(e.target.files)}
             />
             <button type="button" className="btn-chip" onClick={pickFiles}>
-              📷 Ảnh/Video
+              <FontAwesomeIcon icon={faPhotoFilm} />
+              <span>Ảnh/Video</span>
             </button>
-            <span className="pill">⚠️ Từ thô tục sẽ bị che</span>
+
+            <span className="pill">
+              <FontAwesomeIcon icon={faTriangleExclamation} />
+              <span>Từ thô tục sẽ bị che</span>
+            </span>
           </div>
 
           <button className="btn-primary" disabled={busy}>
-            {busy ? "Đang đăng..." : "Đăng"}
+            <FontAwesomeIcon icon={faPaperPlane} />
+            <span style={{ marginLeft: 8 }}>{busy ? "Đang đăng..." : "Đăng"}</span>
           </button>
         </div>
 
-        {err && <div className="err" style={{ marginTop: 10 }}>{err}</div>}
+        {err && (
+          <div className="err" style={{ marginTop: 10 }}>
+            {err}
+          </div>
+        )}
       </form>
     </div>
   );

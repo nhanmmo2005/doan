@@ -1,64 +1,72 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { http } from "../api/http";
+import { createComment, deleteComment, fetchComments } from "../api/comments";
 import { uploadMedia } from "../api/upload";
 
-const MAX_FILES = 6;
+function buildTree(list) {
+  const map = new Map();
+  const roots = [];
 
-function fmt(ts) {
-  try { return new Date(ts).toLocaleString(); } catch { return ""; }
+  for (const c of list) map.set(c.id, { ...c, replies: [] });
+
+  for (const c of list) {
+    const node = map.get(c.id);
+    if (c.parent_id) {
+      const parent = map.get(c.parent_id);
+      if (parent) parent.replies.push(node);
+      else roots.push(node);
+    } else roots.push(node);
+  }
+
+  return roots;
 }
 
-export default function CommentBox({ postId, inputRef }) {
-  const [items, setItems] = useState([]);
+function MediaStrip({ media }) {
+  if (!media?.length) return null;
+
+  return (
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+      {media.map((m, i) => (
+        <div
+          key={i}
+          style={{
+            border: "1px solid rgba(0,0,0,0.1)",
+            borderRadius: 12,
+            overflow: "hidden",
+            width: 160,
+            background: "#fff",
+          }}
+        >
+          {m.mediaType === "video" ? (
+            <video controls style={{ width: "100%", display: "block", background: "#000" }}>
+              <source src={m.url} />
+            </video>
+          ) : (
+            <img src={m.url} alt="" style={{ width: "100%", display: "block" }} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CommentComposer({ postId, parentId = null, onDone }) {
   const [content, setContent] = useState("");
+  const [files, setFiles] = useState([]); // File[]
+  const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const [files, setFiles] = useState([]);
-  const [previews, setPreviews] = useState([]);
-
   const fileRef = useRef(null);
 
-  useEffect(() => {
-    // build preview urls
-    previews.forEach((p) => URL.revokeObjectURL(p.url));
-    setPreviews(
-      files.map((f) => ({
-        file: f,
-        url: URL.createObjectURL(f),
-        mediaType: f.type.startsWith("video/") ? "video" : "image",
-      }))
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [files]);
-
-  async function load() {
-    setErr("");
-    try {
-      const res = await http.get(`/api/comments/${postId}`);
-      setItems(res.data || []);
-    } catch (e) {
-      setErr(e?.response?.data?.msg || "Không tải được bình luận");
-    }
-  }
-
-  useEffect(() => { load(); }, [postId]);
-
   function addFiles(newFiles) {
-    const arr = Array.from(newFiles || []);
-    if (!arr.length) return;
-    setFiles((prev) => [...prev, ...arr].slice(0, MAX_FILES));
-  }
-
-  function removeFile(f) {
-    setFiles((prev) => prev.filter((x) => x !== f));
+    const incoming = Array.from(newFiles || []);
+    const merged = [...files, ...incoming].slice(0, 8); // giới hạn 8
+    setFiles(merged);
   }
 
   function onPaste(e) {
-    const clip = e.clipboardData?.items || [];
+    const items = e.clipboardData?.items || [];
     const pasted = [];
-    for (const it of clip) {
-      if (it.type?.startsWith("image/")) {
+    for (const it of items) {
+      if (it.type?.startsWith("image/") || it.type?.startsWith("video/")) {
         const f = it.getAsFile();
         if (f) pasted.push(f);
       }
@@ -66,131 +74,214 @@ export default function CommentBox({ postId, inputRef }) {
     if (pasted.length) addFiles(pasted);
   }
 
-  async function submit(e) {
-    e.preventDefault();
+  async function submit() {
     setErr("");
-
-    if (!content.trim() && files.length === 0) {
-      return setErr("Bạn chưa nhập gì cả.");
-    }
+    if (!content.trim()) return setErr("Bạn chưa nhập bình luận.");
 
     try {
-      setLoading(true);
+      setBusy(true);
 
+      // upload nhiều file 1 lần
       let media = [];
       if (files.length) {
-        media = await uploadMedia(files); // 1 lần cho tất cả files
+        const uploaded = await uploadMedia(files); // trả về [{url, mediaType}] :contentReference[oaicite:3]{index=3}
+        media = (uploaded || []).slice(0, 8).map((u, idx) => ({
+          url: u.url,
+          mediaType: u.mediaType,
+          sortOrder: idx,
+        }));
       }
 
-      await http.post(`/api/comments/${postId}`, {
-        content: content.trim() || "(đã gửi media)",
+      await createComment(postId, {
+        content,
+        parentId,
         media,
       });
 
       setContent("");
       setFiles([]);
-      await load();
-    } catch (e2) {
-      setErr(e2?.response?.data?.msg || "Gửi bình luận thất bại");
+      onDone?.();
+    } catch (e) {
+      setErr(e?.response?.data?.msg || "Bình luận thất bại");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+        <div className="avatar" title="Bạn" style={{ flex: "0 0 auto" }}>U</div>
+
+        <div style={{ flex: 1 }}>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            onPaste={onPaste}
+            placeholder={parentId ? "Viết trả lời..." : "Viết bình luận... (Ctrl+V để dán ảnh/video)"}
+            style={{
+              width: "100%",
+              minHeight: 46,
+              padding: "10px 12px",
+              borderRadius: 12,
+              border: "1px solid rgba(0,0,0,0.12)",
+              outline: "none",
+              resize: "vertical",
+              lineHeight: 1.4,
+            }}
+          />
+
+          {/* preview file list (gọn) */}
+          {files.length > 0 && (
+            <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {files.map((f, i) => (
+                <div
+                  key={i}
+                  className="pill"
+                  style={{
+                    maxWidth: 260,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                  title={f.name}
+                >
+                  {f.type.startsWith("video/") ? "🎬" : "🖼️"} {f.name}
+                </div>
+              ))}
+              <button className="chip" type="button" onClick={() => setFiles([])}>
+                ✖ Bỏ file
+              </button>
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+            <input
+              ref={fileRef}
+              type="file"
+              multiple
+              accept="image/*,video/*"
+              style={{ display: "none" }}
+              onChange={(e) => addFiles(e.target.files)}
+            />
+            <button className="chip" type="button" onClick={() => fileRef.current?.click()}>
+              🖼️/🎬 Đính kèm
+            </button>
+            <button className="primary" type="button" onClick={submit} disabled={busy}>
+              {busy ? "Đang gửi..." : "Gửi"}
+            </button>
+          </div>
+
+          {err && <div className="err" style={{ marginTop: 8 }}>{err}</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CommentItem({ c, postId, onReload, depth = 0 }) {
+  const [replying, setReplying] = useState(false);
+
+  async function del() {
+    await deleteComment(c.id);
+    onReload?.();
+  }
+
+  return (
+    <div style={{ marginTop: 10, marginLeft: depth ? 36 : 0 }}>
+      <div style={{ display: "flex", gap: 10 }}>
+        <div className="avatar" title={c.author_name || "User"} style={{ flex: "0 0 auto" }}>
+          {(c.author_name || "U").slice(0, 1).toUpperCase()}
+        </div>
+
+        <div style={{ flex: 1 }}>
+          <div
+            style={{
+              background: "rgba(0,0,0,0.03)",
+              border: "1px solid rgba(0,0,0,0.06)",
+              borderRadius: 14,
+              padding: "10px 12px",
+            }}
+          >
+            <div style={{ fontWeight: 800, color: "#111827" }}>{c.author_name || "User"}</div>
+            <div style={{ marginTop: 4, whiteSpace: "pre-wrap", lineHeight: 1.45 }}>{c.content}</div>
+
+            <MediaStrip media={c.media} />
+
+            <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
+              <button className="chip" type="button" onClick={() => setReplying((x) => !x)}>
+                ↩ Reply
+              </button>
+              <button className="chip" type="button" onClick={del}>
+                🗑 Xoá
+              </button>
+              <span className="muted" style={{ fontSize: 12 }}>
+                {new Date(c.created_at).toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          {replying && (
+            <CommentComposer
+              postId={postId}
+              parentId={c.id}
+              onDone={() => {
+                setReplying(false);
+                onReload?.();
+              }}
+            />
+          )}
+
+          {c.replies?.length > 0 &&
+            c.replies.map((r) => (
+              <CommentItem key={r.id} c={r} postId={postId} onReload={onReload} depth={depth + 1} />
+            ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function CommentBox({ postId }) {
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  async function reload() {
+    setLoading(true);
+    try {
+      const data = await fetchComments(postId);
+      setList(data);
     } finally {
       setLoading(false);
     }
   }
 
-  const mediaHint = useMemo(() => {
-    if (!files.length) return "Có thể Ctrl+V để dán ảnh • Chọn nhiều ảnh/video";
-    return `Đã chọn ${files.length}/${MAX_FILES} file`;
-  }, [files.length]);
+  useEffect(() => {
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postId]);
+
+  const tree = useMemo(() => buildTree(list), [list]);
 
   return (
-    <div className="cmt-box">
-      <form className="cmt-form" onSubmit={submit}>
-        <div className="cmt-inputrow">
-          <div className="avatar sm">U</div>
+    <div style={{ borderTop: "1px solid rgba(0,0,0,0.08)", paddingTop: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+        <div style={{ fontWeight: 900 }}>Bình luận</div>
+        <button className="chip" type="button" onClick={reload} disabled={loading}>
+          {loading ? "Đang tải..." : "↻ Tải lại"}
+        </button>
+      </div>
 
-          <div className="cmt-inputwrap">
-            <textarea
-              ref={inputRef}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              onPaste={onPaste}
-              placeholder="Viết bình luận..."
-            />
-            <div className="cmt-hint">{mediaHint}</div>
+      <CommentComposer postId={postId} onDone={reload} />
 
-            {previews.length > 0 && (
-              <div className="cmt-preview">
-                {previews.map((p, idx) => (
-                  <div className="cmt-prev-item" key={idx}>
-                    {p.mediaType === "video" ? (
-                      <video controls preload="metadata">
-                        <source src={p.url} />
-                      </video>
-                    ) : (
-                      <img src={p.url} alt="" />
-                    )}
-                    <button type="button" className="preview-remove" onClick={() => removeFile(p.file)}>
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="cmt-actions">
-              <input
-                ref={fileRef}
-                className="hiddenFile"
-                type="file"
-                accept="image/*,video/*"
-                multiple
-                onChange={(e) => addFiles(e.target.files)}
-              />
-              <button type="button" className="btn-chip" onClick={() => fileRef.current?.click()}>
-                📎 Đính kèm
-              </button>
-
-              <button className="btn-primary" disabled={loading}>
-                {loading ? "Đang gửi..." : "Gửi"}
-              </button>
-            </div>
+      <div style={{ marginTop: 8 }}>
+        {tree.length === 0 ? (
+          <div className="muted" style={{ fontSize: 13 }}>
+            Chưa có bình luận nào.
           </div>
-        </div>
-
-        {err && <div className="err" style={{ marginTop: 8 }}>{err}</div>}
-      </form>
-
-      <div className="cmt-list">
-        {items.map((c) => (
-          <div className="cmt-item" key={c.id}>
-            <div className="avatar sm">{(c.author_name || "U")[0]?.toUpperCase?.() || "U"}</div>
-
-            <div className="cmt-bubble">
-              <div className="cmt-top">
-                <div className="cmt-name truncate">{c.author_name || "User"}</div>
-                <div className="cmt-time">{fmt(c.created_at)}</div>
-              </div>
-
-              <div className="cmt-text">{c.content}</div>
-
-              {!!c.media?.length && (
-                <div className="cmt-media">
-                  {c.media.map((m, i) => (
-                    <a className="cmt-media-item" key={i} href={m.url} target="_blank" rel="noreferrer">
-                      {m.mediaType === "video" ? (
-                        <div className="cmt-videoTag">▶ video</div>
-                      ) : (
-                        <img src={m.url} alt="" />
-                      )}
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {!items.length && <div className="muted" style={{ padding: "10px 0" }}>Chưa có bình luận nào</div>}
+        ) : (
+          tree.map((c) => <CommentItem key={c.id} c={c} postId={postId} onReload={reload} />)
+        )}
       </div>
     </div>
   );
