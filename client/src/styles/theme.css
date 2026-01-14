@@ -1053,3 +1053,98 @@ input {
   background: rgba(0,0,0,0.06);
   border: 1px solid var(--border);
 }
+/* ===== Comment UI override (fix reply nhếch) ===== */
+.cmt-thread { margin-top: 8px; }
+.cmt-node { margin-top: 10px; }
+
+.cmt-item {
+  padding-left: 0 !important;  /* chặn indent kiểu cũ */
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.cmt-body { flex: 1; min-width: 0; }
+
+.cmt-bubble {
+  max-width: 100%;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(0,0,0,0.02);
+}
+
+.cmt-replies{
+  margin-left: 42px;          /* indent cố định */
+  padding-left: 12px;
+  border-left: 2px solid rgba(0,0,0,0.08);
+  max-width: calc(100% - 42px);
+}
+
+@media (max-width: 520px){
+  .cmt-replies { margin-left: 34px; max-width: calc(100% - 34px); }
+}
+
+.cmt-rowActions{
+  display: flex;
+  gap: 10px;
+  padding-left: 2px;
+  margin-top: 6px;
+}
+
+.cmt-btn{
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  color: rgba(17,24,39,0.75);
+  cursor: pointer;
+}
+
+.cmt-btn:hover{ text-decoration: underline; }
+.cmt-btn.danger{ color: rgba(220,38,38,0.85); }
+
+.cmt-uploadPreview{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.cmt-upItem{
+  width: 84px;
+  height: 84px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.08);
+  position: relative;
+  background: #fff;
+}
+
+.cmt-upItem img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cmt-upVideo{
+  width: 100%;
+  height: 100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 12px;
+  color: rgba(17,24,39,0.7);
+  background: rgba(0,0,0,0.04);
+}
+
+.cmt-upRemove{
+  position:absolute;
+  top:6px; right:6px;
+  width:22px; height:22px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  line-height: 22px;
+}

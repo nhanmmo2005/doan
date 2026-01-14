@@ -53,8 +53,9 @@ export default function FeedPage() {
         {err && <div className="err">{err}</div>}
 
         {posts.map((p) => (
-          <FeedPostCard key={p.id} post={p} onLike={like} />
+          <FeedPostCard key={p.id} post={p} onLike={like} onChanged={load} />
         ))}
+
 
         {!posts.length && <div className="pill">Chưa có bài nào</div>}
       </div>

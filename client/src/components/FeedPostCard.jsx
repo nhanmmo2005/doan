@@ -1,46 +1,78 @@
-import PostItem from "./PostItem";
+// client/src/components/FeedPostCard.jsx
 import { useMemo, useState } from "react";
+import PostItem from "./PostItem";
 import Lightbox from "./Lightbox";
 
-function MediaBlock({ items, onOpenImage }) {
-  if (!items?.length) return null;
+function MediaGrid({ media, onOpen }) {
+  const images = (media || []).filter((m) => m.mediaType === "image");
+  const videos = (media || []).filter((m) => m.mediaType === "video");
 
-  const videos = items.filter((m) => m.mediaType === "video");
-  const images = items.filter((m) => m.mediaType === "image");
+  if (!media || media.length === 0) return null;
 
   return (
-    <div className="post-media">
-      {/* video inline */}
+    <div style={{ marginTop: 10 }}>
+      {/* Videos inline */}
       {videos.map((v, idx) => (
-        <div className="post-video" key={`v-${idx}`}>
-          <video controls preload="metadata">
+        <div
+          key={`v-${idx}`}
+          style={{
+            borderRadius: 14,
+            overflow: "hidden",
+            border: "1px solid rgba(0,0,0,0.08)",
+            marginBottom: 10,
+            background: "#fff",
+          }}
+        >
+          <video controls style={{ width: "100%", display: "block", background: "#000" }}>
             <source src={v.url} />
           </video>
         </div>
       ))}
 
-      {/* image grid */}
+      {/* Images grid */}
       {images.length > 0 && (
         <div
-          className={[
-            "post-img-grid",
-            images.length === 1 ? "g1" : "",
-            images.length === 2 ? "g2" : "",
-            images.length === 3 ? "g3" : "",
-            images.length >= 4 ? "g4" : "",
-          ].join(" ")}
+          style={{
+            display: "grid",
+            gap: 6,
+            gridTemplateColumns: images.length === 1 ? "1fr" : "1fr 1fr",
+          }}
         >
-          {images.slice(0, 4).map((img, i) => {
-            const more = i === 3 && images.length > 4;
+          {images.slice(0, 4).map((img, idx) => {
+            const isFourth = idx === 3 && images.length > 4;
             return (
               <button
-                key={`i-${i}`}
+                key={`i-${idx}`}
                 type="button"
-                className="img-tile"
-                onClick={() => onOpenImage(i)}
+                onClick={() => onOpen(idx)}
+                style={{
+                  all: "unset",
+                  cursor: "pointer",
+                  position: "relative",
+                  borderRadius: 14,
+                  overflow: "hidden",
+                  border: "1px solid rgba(0,0,0,0.08)",
+                  background: "#fff",
+                }}
               >
-                <img src={img.url} alt="" />
-                {more && <div className="img-more">+{images.length - 4}</div>}
+                <img src={img.url} alt="" style={{ width: "100%", display: "block" }} />
+                {isFourth && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: "rgba(0,0,0,0.55)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      fontSize: 28,
+                      fontWeight: 900,
+                    }}
+                  >
+                    +{images.length - 4}
+                  </div>
+                )}
               </button>
             );
           })}
@@ -50,40 +82,43 @@ function MediaBlock({ items, onOpenImage }) {
   );
 }
 
-export default function FeedPostCard({ post, onLike }) {
-  const media = Array.isArray(post?.media) ? post.media : [];
-  const fallback = post?.image_url ? [{ mediaType: "image", url: post.image_url, sortOrder: 0 }] : [];
+export default function FeedPostCard({ post, onLike, onChanged, autoOpenComments = false }) {
+  const media = Array.isArray(post.media) ? post.media : [];
+  const fallback = post.image_url
+    ? [{ mediaType: "image", url: post.image_url, sortOrder: 0 }]
+    : [];
 
-  const items = useMemo(() => (media.length ? media : fallback), [media, post?.image_url]);
+  const items = useMemo(() => (media.length ? media : fallback), [media, post.image_url]);
 
-  const imagesOnly = useMemo(() => items.filter((x) => x.mediaType === "image"), [items]);
+  const imageItems = useMemo(() => items.filter((x) => x.mediaType === "image"), [items]);
 
   const [lbOpen, setLbOpen] = useState(false);
   const [lbIndex, setLbIndex] = useState(0);
 
-  function openImageAt(i) {
-    if (!imagesOnly.length) return;
-    const safe = Math.max(0, Math.min(i, imagesOnly.length - 1));
-    setLbIndex(safe);
+  function openAt(i) {
+    setLbIndex(i);
     setLbOpen(true);
   }
 
   return (
     <>
-      <PostItem post={post} onLike={onLike}>
-        <MediaBlock items={items} onOpenImage={openImageAt} />
+      <PostItem
+        post={post}
+        onLike={onLike}
+        onChanged={onChanged}
+        autoOpenComments={autoOpenComments}
+      >
+        <MediaGrid media={items} onOpen={openAt} />
       </PostItem>
 
-      {imagesOnly.length > 0 && (
-        <Lightbox
-          open={lbOpen}
-          items={imagesOnly}
-          index={lbIndex}
-          onClose={() => setLbOpen(false)}
-          onPrev={() => setLbIndex((x) => (imagesOnly.length ? (x - 1 + imagesOnly.length) % imagesOnly.length : 0))}
-          onNext={() => setLbIndex((x) => (imagesOnly.length ? (x + 1) % imagesOnly.length : 0))}
-        />
-      )}
+      <Lightbox
+        open={lbOpen}
+        items={imageItems}
+        index={lbIndex}
+        onClose={() => setLbOpen(false)}
+        onPrev={() => setLbIndex((x) => (x - 1 + imageItems.length) % imageItems.length)}
+        onNext={() => setLbIndex((x) => (x + 1) % imageItems.length)}
+      />
     </>
   );
 }

@@ -1,10 +1,15 @@
+// src/components/CommentBox.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { uploadMedia } from "../api/upload";
-import { createComment, deleteComment, fetchComments } from "../api/comments";
+import { createComment, deleteComment, fetchComments, updateComment } from "../api/comments";
+import { getUser } from "../auth";
+
+const MAX_FILES = 8;
 
 function fmtTime(ts) {
   try {
-    return new Date(ts).toLocaleString();
+    const d = new Date(ts);
+    return isNaN(d.getTime()) ? "" : d.toLocaleString();
   } catch {
     return "";
   }
@@ -26,52 +31,7 @@ function buildTree(flat) {
       roots.push(node);
     }
   }
-
   return roots;
-}
-
-/**
- * Chuẩn hoá output uploadMedia:
- * - string url
- * - { url, mediaType }
- * - { items: [...] }
- * - { media: [...] }
- */
-function normalizeUploaded(result) {
-  const arr =
-    Array.isArray(result)
-      ? result
-      : Array.isArray(result?.items)
-      ? result.items
-      : Array.isArray(result?.media)
-      ? result.media
-      : [];
-
-  return arr
-    .map((x, idx) => {
-      if (!x) return null;
-
-      if (typeof x === "string") {
-        // fallback: đoán type theo đuôi
-        const low = x.toLowerCase();
-        const mediaType =
-          low.endsWith(".mp4") || low.endsWith(".webm") || low.endsWith(".mov") ? "video" : "image";
-        return { mediaType, url: x, sortOrder: idx };
-      }
-
-      const url = x.url || x.Location || x.location;
-      if (!url) return null;
-
-      const mediaType = x.mediaType || x.media_type || x.type || "image";
-      const sortOrder = Number(x.sortOrder ?? x.sort_order ?? idx);
-
-      return {
-        mediaType: mediaType === "video" ? "video" : "image",
-        url,
-        sortOrder,
-      };
-    })
-    .filter(Boolean);
 }
 
 function MediaThumbs({ media }) {
@@ -88,75 +48,103 @@ function MediaThumbs({ media }) {
           rel="noreferrer"
           title="Mở media"
         >
-          {m.mediaType === "image" ? (
-            <img src={m.url} alt="" />
-          ) : (
-            <div className="cmt-videoTag">VIDEO</div>
-          )}
+          {m.mediaType === "image" ? <img src={m.url} alt="" /> : <div className="cmt-videoTag">VIDEO</div>}
         </a>
       ))}
     </div>
   );
 }
 
-function CommentItem({ node, depth, onReply, onDelete }) {
-  const capped = Math.min(depth, 2); // chặn “nhếch” vô hạn
+function ActionBtn({ children, danger, onClick }) {
+  return (
+    <button
+      type="button"
+      className={`cmt-btn ${danger ? "danger" : ""}`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+function CommentNode({
+  node,
+  onReply,
+  onDelete,
+  onEdit,
+  canManage,
+}) {
+  const avatar = (node.author_name?.[0] || "U").toUpperCase();
 
   return (
-    <div className="cmt-item" style={{ "--cmtIndent": capped }}>
-      <div className="avatar sm">{(node.author_name?.[0] || "U").toUpperCase()}</div>
+    <div className="cmt-node">
+      <div className="cmt-item">
+        <div className="avatar sm">{avatar}</div>
 
-      <div className="cmt-bubble">
-        <div className="cmt-top">
-          <div className="cmt-name truncate">{node.author_name || "User"}</div>
-          <div className="cmt-time">{fmtTime(node.created_at)}</div>
-        </div>
+        <div className="cmt-body">
+          <div className="cmt-bubble">
+            <div className="cmt-top">
+              <div className="cmt-name truncate">{node.author_name || "User"}</div>
+              <div className="cmt-time">{fmtTime(node.created_at)}</div>
+            </div>
 
-        <div className="cmt-text">{node.content}</div>
-
-        <MediaThumbs media={node.media} />
-
-        <div className="cmt-rowActions">
-          <button className="cmt-btn" type="button" onClick={() => onReply(node)}>
-            Trả lời
-          </button>
-
-          <button className="cmt-btn danger" type="button" onClick={() => onDelete(node.id)}>
-            Xoá
-          </button>
-        </div>
-
-        {node.replies?.length ? (
-          <div className="cmt-replies">
-            {node.replies.map((r) => (
-              <CommentItem
-                key={r.id}
-                node={r}
-                depth={depth + 1}
-                onReply={onReply}
-                onDelete={onDelete}
-              />
-            ))}
+            <div className="cmt-text">{node.content}</div>
+            <MediaThumbs media={node.media} />
           </div>
-        ) : null}
+
+          <div className="cmt-rowActions">
+            <ActionBtn onClick={() => onReply(node)}>Trả lời</ActionBtn>
+            {canManage && <ActionBtn onClick={() => onEdit(node)}>Sửa</ActionBtn>}
+            {canManage && <ActionBtn danger onClick={() => onDelete(node.id)}>Xoá</ActionBtn>}
+          </div>
+        </div>
       </div>
+
+      {node.replies?.length ? (
+        <div className="cmt-replies">
+          {node.replies.map((r) => (
+            <CommentTreeItem
+              key={r.id}
+              node={r}
+              onReply={onReply}
+              onDelete={onDelete}
+              onEdit={onEdit}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
 
+function CommentTreeItem({ node, onReply, onDelete, onEdit }) {
+  const me = getUser();
+  const canManage = me && (me.id === node.user_id || me.role === "admin");
+  return (
+    <CommentNode
+      node={node}
+      onReply={onReply}
+      onDelete={onDelete}
+      onEdit={onEdit}
+      canManage={!!canManage}
+    />
+  );
+}
+
 export default function CommentBox({ postId, inputRef }) {
-  const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const [text, setText] = useState("");
   const [files, setFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
 
   const [replyTo, setReplyTo] = useState(null);
+
+  const [editing, setEditing] = useState(null); // {id, content, media}
   const localRef = useRef(null);
   const fileRef = useRef(null);
-
   const focusRef = inputRef || localRef;
 
   async function reload() {
@@ -166,8 +154,8 @@ export default function CommentBox({ postId, inputRef }) {
 
   useEffect(() => {
     (async () => {
-      setErr("");
       try {
+        setErr("");
         await reload();
       } catch (e) {
         setErr(e?.response?.data?.msg || "Không tải được bình luận");
@@ -177,11 +165,7 @@ export default function CommentBox({ postId, inputRef }) {
   }, [postId]);
 
   useEffect(() => {
-    const urls = (files || []).map((f) => ({
-      file: f,
-      url: URL.createObjectURL(f),
-      type: f.type,
-    }));
+    const urls = (files || []).map((f) => ({ file: f, url: URL.createObjectURL(f), type: f.type }));
     setPreviews(urls);
     return () => urls.forEach((x) => URL.revokeObjectURL(x.url));
   }, [files]);
@@ -190,6 +174,12 @@ export default function CommentBox({ postId, inputRef }) {
 
   function pickFiles() {
     fileRef.current?.click();
+  }
+
+  function addFiles(list) {
+    const arr = Array.from(list || []);
+    if (!arr.length) return;
+    setFiles((prev) => [...prev, ...arr].slice(0, MAX_FILES));
   }
 
   function onPaste(e) {
@@ -201,7 +191,14 @@ export default function CommentBox({ postId, inputRef }) {
         if (f) added.push(f);
       }
     }
-    if (added.length) setFiles((prev) => [...prev, ...added].slice(0, 8));
+    if (added.length) addFiles(added);
+  }
+
+  function resetComposer() {
+    setText("");
+    setFiles([]);
+    setReplyTo(null);
+    setEditing(null);
   }
 
   async function submit(e) {
@@ -210,25 +207,37 @@ export default function CommentBox({ postId, inputRef }) {
 
     if (!text.trim()) return setErr("Bạn chưa nhập nội dung bình luận.");
 
-    setLoading(true);
     try {
-      let media = [];
+      setLoading(true);
 
+      let media = [];
       if (files.length) {
         const uploaded = await uploadMedia(files);
-        media = normalizeUploaded(uploaded);
+        media = (uploaded || []).map((m, idx) => ({
+          mediaType: m.mediaType,
+          url: m.url,
+          sortOrder: idx,
+        }));
       }
 
-      await createComment(postId, {
-        content: text.trim(),
-        parentId: replyTo?.id || null,
-        media,
-      });
+      // edit
+      if (editing?.id) {
+        await updateComment(editing.id, {
+          content: text.trim(),
+          // nếu bạn muốn edit media luôn thì để dòng dưới:
+          // media,
+        });
+      } else {
+        await createComment(postId, {
+          content: text.trim(),
+          parentId: replyTo?.id || null,
+          media,
+        });
+      }
 
-      setText("");
-      setFiles([]);
-      setReplyTo(null);
       await reload();
+      resetComposer();
+      setTimeout(() => focusRef.current?.focus?.(), 50);
     } catch (e2) {
       setErr(e2?.response?.data?.msg || "Gửi bình luận thất bại");
     } finally {
@@ -236,116 +245,118 @@ export default function CommentBox({ postId, inputRef }) {
     }
   }
 
-  function startReply(node) {
-    setReplyTo({ id: node.id, author_name: node.author_name });
-    setTimeout(() => focusRef.current?.focus?.(), 50);
-  }
-
   async function handleDelete(id) {
+    if (!confirm("Xoá bình luận này?")) return;
     try {
       await deleteComment(id);
       await reload();
     } catch (e) {
-      setErr(e?.response?.data?.msg || "Xoá bình luận thất bại");
+      alert(e?.response?.data?.msg || "Xoá thất bại");
     }
+  }
+
+  function handleReply(node) {
+    setEditing(null);
+    setReplyTo(node);
+    setTimeout(() => focusRef.current?.focus?.(), 50);
+  }
+
+  function handleEdit(node) {
+    setReplyTo(null);
+    setEditing(node);
+    setText(node.content || "");
+    setFiles([]);
+    setTimeout(() => focusRef.current?.focus?.(), 50);
   }
 
   return (
     <div className="cmt-box">
-      <form className="cmt-form" onSubmit={submit}>
-        {replyTo && (
-          <div className="cmt-replyBar">
-            <div className="truncate">
-              Đang trả lời <b>{replyTo.author_name || "User"}</b>
-            </div>
-            <button className="chip" type="button" onClick={() => setReplyTo(null)}>
-              Huỷ
-            </button>
+      {err && <div className="err" style={{ marginBottom: 10 }}>{err}</div>}
+
+      {tree.length ? (
+        <div className="cmt-thread">
+          {tree.map((n) => (
+            <CommentTreeItem
+              key={n.id}
+              node={n}
+              onReply={handleReply}
+              onDelete={handleDelete}
+              onEdit={handleEdit}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="muted" style={{ fontSize: 13 }}>Chưa có bình luận.</div>
+      )}
+
+      {/* Composer */}
+      <form className="cmt-compose" onSubmit={submit}>
+        {(replyTo || editing) && (
+          <div className="cmt-composeHint">
+            {editing ? (
+              <>
+                Đang sửa bình luận •{" "}
+                <button type="button" className="linkBtn" onClick={resetComposer}>Huỷ</button>
+              </>
+            ) : (
+              <>
+                Trả lời <b>{replyTo?.author_name || "User"}</b> •{" "}
+                <button type="button" className="linkBtn" onClick={() => setReplyTo(null)}>Huỷ</button>
+              </>
+            )}
           </div>
         )}
 
-        <div className="cmt-inputrow">
-          <div className="avatar sm">U</div>
+        <div className="cmt-composeRow">
+          <textarea
+            ref={focusRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onPaste={onPaste}
+            placeholder="Viết bình luận… (có thể Ctrl+V dán ảnh)"
+          />
 
-          <div className="cmt-inputwrap">
-            <textarea
-              ref={focusRef}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onPaste={onPaste}
-              placeholder="Viết bình luận… (Ctrl+V để dán ảnh)"
+          <div className="cmt-composeTools">
+            <input
+              ref={fileRef}
+              type="file"
+              className="hiddenFile"
+              multiple
+              accept="image/*,video/*"
+              onChange={(e) => addFiles(e.target.files)}
             />
+            <button type="button" className="chip" onClick={pickFiles} title="Thêm ảnh/video">
+              Thêm media
+            </button>
 
-            {!!previews.length && (
-              <div className="cmt-preview">
-                {previews.map((p, idx) => (
-                  <div className="cmt-prev-item" key={idx}>
-                    {p.type.startsWith("image/") ? (
-                      <img src={p.url} alt="" />
-                    ) : (
-                      <video src={p.url} controls />
-                    )}
-
-                    <button
-                      className="preview-remove"
-                      type="button"
-                      onClick={() => setFiles((prev) => prev.filter((_, i) => i !== idx))}
-                      title="Bỏ file"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="cmt-actions">
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  className="hiddenFile"
-                  accept="image/*,video/*"
-                  multiple
-                  onChange={(e) => {
-                    const arr = Array.from(e.target.files || []);
-                    setFiles((prev) => [...prev, ...arr].slice(0, 8));
-                    e.target.value = "";
-                  }}
-                />
-
-                <button className="chip" type="button" onClick={pickFiles}>
-                  Đính kèm
-                </button>
-
-                {files.length ? <span className="pill">{files.length} file</span> : null}
-              </div>
-
-              <button className="primary" disabled={loading}>
-                {loading ? "Đang gửi…" : "Gửi"}
-              </button>
-            </div>
-
-            {err && (
-              <div className="err" style={{ marginTop: 10 }}>
-                {err}
-              </div>
-            )}
+            <button className="primary" disabled={loading}>
+              {loading ? "Đang gửi…" : editing ? "Lưu" : "Gửi"}
+            </button>
           </div>
         </div>
-      </form>
 
-      <div className="cmt-list">
-        {tree.map((node) => (
-          <CommentItem
-            key={node.id}
-            node={node}
-            depth={0}
-            onReply={startReply}
-            onDelete={handleDelete}
-          />
-        ))}
-      </div>
+        {previews.length > 0 && (
+          <div className="cmt-uploadPreview">
+            {previews.map((p, idx) => (
+              <div className="cmt-upItem" key={idx}>
+                {p.type.startsWith("image/") ? (
+                  <img src={p.url} alt="" />
+                ) : (
+                  <div className="cmt-upVideo">VIDEO</div>
+                )}
+                <button
+                  type="button"
+                  className="cmt-upRemove"
+                  onClick={() => setFiles((prev) => prev.filter((f) => f !== p.file))}
+                  title="Bỏ file"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </form>
     </div>
   );
 }
