@@ -1,12 +1,28 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import AppLayout from "../../components/AppLayout";
-import { FaUsers, FaNewspaper, FaUtensils, FaCalendarAlt, FaComments, FaChartBar, FaCheck, FaTimes, FaLock, FaUnlock, FaTrash, FaStar, FaEye, FaEyeSlash, FaStarHalfAlt, FaEdit, FaPlus, FaTag } from "react-icons/fa";
-
-const API = "http://localhost:5000";
+import { http } from "../../api/http";
+import {
+  FaUsers,
+  FaNewspaper,
+  FaUtensils,
+  FaCalendarAlt,
+  FaComments,
+  FaChartBar,
+  FaCheck,
+  FaTimes,
+  FaLock,
+  FaUnlock,
+  FaTrash,
+  FaStar,
+  FaEye,
+  FaEyeSlash,
+  FaStarHalfAlt,
+  FaEdit,
+  FaPlus,
+  FaTag,
+} from "react-icons/fa";
 
 export default function AdminPage() {
-  const token = localStorage.getItem("token");
   const [activeTab, setActiveTab] = useState("dashboard");
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -20,7 +36,7 @@ export default function AdminPage() {
   const [chatRooms, setChatRooms] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [banners, setBanners] = useState([]);
-  
+
   // Banner CRUD states
   const [showBannerForm, setShowBannerForm] = useState(false);
   const [editingBanner, setEditingBanner] = useState(null);
@@ -36,7 +52,7 @@ export default function AdminPage() {
     sort_order: 0,
     is_active: true,
   });
-  
+
   // Restaurant CRUD states
   const [showRestaurantForm, setShowRestaurantForm] = useState(false);
   const [editingRestaurant, setEditingRestaurant] = useState(null);
@@ -56,9 +72,7 @@ export default function AdminPage() {
   // Load stats
   async function loadStats() {
     try {
-      const res = await axios.get(`${API}/api/admin/stats`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await http.get("/api/admin/stats");
       setStats(res.data);
     } catch (e) {
       console.error("Load stats error:", e);
@@ -70,13 +84,12 @@ export default function AdminPage() {
     setLoading(true);
     setErr("");
     try {
-      const res = await axios.get(`${API}/api/admin/posts`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await http.get("/api/admin/posts", {
         params: { limit: 100 },
       });
       setPosts(res.data);
     } catch (e) {
-      setErr(e.response?.data?.msg || "Không tải được danh sách bài viết");
+      setErr(e?.response?.data?.msg || "Không tải được danh sách bài viết");
     } finally {
       setLoading(false);
     }
@@ -87,13 +100,12 @@ export default function AdminPage() {
     setLoading(true);
     setErr("");
     try {
-      const res = await axios.get(`${API}/api/admin/users`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await http.get("/api/admin/users", {
         params: { limit: 100 },
       });
       setUsers(res.data);
     } catch (e) {
-      setErr(e.response?.data?.msg || "Không tải được danh sách người dùng");
+      setErr(e?.response?.data?.msg || "Không tải được danh sách người dùng");
     } finally {
       setLoading(false);
     }
@@ -104,13 +116,12 @@ export default function AdminPage() {
     setLoading(true);
     setErr("");
     try {
-      const res = await axios.get(`${API}/api/admin/restaurants`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await http.get("/api/admin/restaurants", {
         params: { limit: 100 },
       });
       setRestaurants(res.data);
     } catch (e) {
-      setErr(e.response?.data?.msg || "Không tải được danh sách quán ăn");
+      setErr(e?.response?.data?.msg || "Không tải được danh sách quán ăn");
     } finally {
       setLoading(false);
     }
@@ -121,13 +132,12 @@ export default function AdminPage() {
     setLoading(true);
     setErr("");
     try {
-      const res = await axios.get(`${API}/api/admin/eating-plans`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await http.get("/api/admin/eating-plans", {
         params: { limit: 100 },
       });
       setEatingPlans(res.data);
     } catch (e) {
-      setErr(e.response?.data?.msg || "Không tải được danh sách kèo ăn");
+      setErr(e?.response?.data?.msg || "Không tải được danh sách kèo ăn");
     } finally {
       setLoading(false);
     }
@@ -138,12 +148,10 @@ export default function AdminPage() {
     setLoading(true);
     setErr("");
     try {
-      const res = await axios.get(`${API}/api/admin/chat-rooms`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await http.get("/api/admin/chat-rooms");
       setChatRooms(res.data);
     } catch (e) {
-      setErr(e.response?.data?.msg || "Không tải được danh sách phòng chat");
+      setErr(e?.response?.data?.msg || "Không tải được danh sách phòng chat");
     } finally {
       setLoading(false);
     }
@@ -152,104 +160,80 @@ export default function AdminPage() {
   // Post actions
   async function updatePostStatus(postId, status) {
     try {
-      await axios.patch(
-        `${API}/api/admin/posts/${postId}/status`,
-        { status },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await http.patch(`/api/admin/posts/${postId}/status`, { status });
       await loadPosts();
     } catch (e) {
-      setErr(e.response?.data?.msg || "Cập nhật thất bại");
+      setErr(e?.response?.data?.msg || "Cập nhật thất bại");
     }
   }
 
   async function updatePostVisibility(postId, visibility) {
     try {
-      await axios.patch(
-        `${API}/api/admin/posts/${postId}/visibility`,
-        { visibility },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await http.patch(`/api/admin/posts/${postId}/visibility`, { visibility });
       await loadPosts();
     } catch (e) {
-      setErr(e.response?.data?.msg || "Cập nhật thất bại");
+      setErr(e?.response?.data?.msg || "Cập nhật thất bại");
     }
   }
 
   async function deletePost(postId) {
     if (!confirm("Bạn có chắc muốn xóa bài viết này?")) return;
     try {
-      await axios.delete(`${API}/api/admin/posts/${postId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await http.delete(`/api/admin/posts/${postId}`);
       await loadPosts();
     } catch (e) {
-      setErr(e.response?.data?.msg || "Xóa thất bại");
+      setErr(e?.response?.data?.msg || "Xóa thất bại");
     }
   }
 
   // User actions
   async function toggleUserLock(userId, locked) {
     try {
-      await axios.patch(
-        `${API}/api/admin/users/${userId}/lock`,
-        { locked: !locked },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await http.patch(`/api/admin/users/${userId}/lock`, { locked: !locked });
       await loadUsers();
     } catch (e) {
-      setErr(e.response?.data?.msg || "Cập nhật thất bại");
+      setErr(e?.response?.data?.msg || "Cập nhật thất bại");
     }
   }
 
   async function changeUserRole(userId, newRole) {
     try {
-      await axios.patch(
-        `${API}/api/admin/users/${userId}/role`,
-        { role: newRole },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await http.patch(`/api/admin/users/${userId}/role`, { role: newRole });
       await loadUsers();
     } catch (e) {
-      setErr(e.response?.data?.msg || "Cập nhật thất bại");
+      setErr(e?.response?.data?.msg || "Cập nhật thất bại");
     }
   }
 
   async function deleteUser(userId) {
     if (!confirm("Bạn có chắc muốn xóa người dùng này?")) return;
     try {
-      await axios.delete(`${API}/api/admin/users/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await http.delete(`/api/admin/users/${userId}`);
       await loadUsers();
     } catch (e) {
-      setErr(e.response?.data?.msg || "Xóa thất bại");
+      setErr(e?.response?.data?.msg || "Xóa thất bại");
     }
   }
 
   // Restaurant actions
   async function toggleFeatured(restaurantId, featured) {
     try {
-      await axios.patch(
-        `${API}/api/admin/restaurants/${restaurantId}/featured`,
-        { featured: !featured },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await http.patch(`/api/admin/restaurants/${restaurantId}/featured`, {
+        featured: !featured,
+      });
       await loadRestaurants();
     } catch (e) {
-      setErr(e.response?.data?.msg || "Cập nhật thất bại");
+      setErr(e?.response?.data?.msg || "Cập nhật thất bại");
     }
   }
 
   async function deleteRestaurant(restaurantId) {
     if (!confirm("Bạn có chắc muốn xóa quán ăn này?")) return;
     try {
-      await axios.delete(`${API}/api/admin/restaurants/${restaurantId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await http.delete(`/api/admin/restaurants/${restaurantId}`);
       await loadRestaurants();
     } catch (e) {
-      setErr(e.response?.data?.msg || "Xóa thất bại");
+      setErr(e?.response?.data?.msg || "Xóa thất bại");
     }
   }
 
@@ -257,12 +241,10 @@ export default function AdminPage() {
   async function deleteEatingPlan(planId) {
     if (!confirm("Bạn có chắc muốn xóa kèo ăn này?")) return;
     try {
-      await axios.delete(`${API}/api/admin/eating-plans/${planId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await http.delete(`/api/admin/eating-plans/${planId}`);
       await loadEatingPlans();
     } catch (e) {
-      setErr(e.response?.data?.msg || "Xóa thất bại");
+      setErr(e?.response?.data?.msg || "Xóa thất bại");
     }
   }
 
@@ -270,12 +252,10 @@ export default function AdminPage() {
   async function deleteChatRoom(roomId) {
     if (!confirm("Bạn có chắc muốn xóa phòng chat này?")) return;
     try {
-      await axios.delete(`${API}/api/admin/chat-rooms/${roomId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await http.delete(`/api/admin/chat-rooms/${roomId}`);
       await loadChatRooms();
     } catch (e) {
-      setErr(e.response?.data?.msg || "Xóa thất bại");
+      setErr(e?.response?.data?.msg || "Xóa thất bại");
     }
   }
 
@@ -288,13 +268,12 @@ export default function AdminPage() {
     setLoading(true);
     setErr("");
     try {
-      const res = await axios.get(`${API}/api/admin/reviews`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await http.get("/api/admin/reviews", {
         params: { limit: 100 },
       });
       setReviews(res.data);
     } catch (e) {
-      setErr(e.response?.data?.msg || "Không tải được danh sách đánh giá");
+      setErr(e?.response?.data?.msg || "Không tải được danh sách đánh giá");
     } finally {
       setLoading(false);
     }
@@ -305,12 +284,10 @@ export default function AdminPage() {
     setLoading(true);
     setErr("");
     try {
-      const res = await axios.get(`${API}/api/banners/admin/all`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await http.get("/api/banners/admin/all");
       setBanners(res.data);
     } catch (e) {
-      setErr(e.response?.data?.msg || "Không tải được danh sách banners");
+      setErr(e?.response?.data?.msg || "Không tải được danh sách banners");
     } finally {
       setLoading(false);
     }
@@ -319,51 +296,41 @@ export default function AdminPage() {
   async function deleteBanner(bannerId) {
     if (!confirm("Bạn có chắc muốn xóa banner này?")) return;
     try {
-      await axios.delete(`${API}/api/banners/admin/${bannerId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await http.delete(`/api/banners/admin/${bannerId}`);
       await loadBanners();
     } catch (e) {
-      setErr(e.response?.data?.msg || "Xóa thất bại");
+      setErr(e?.response?.data?.msg || "Xóa thất bại");
     }
   }
 
   async function toggleBannerActive(bannerId, currentActive) {
     try {
-      await axios.put(
-        `${API}/api/banners/admin/${bannerId}`,
-        { is_active: !currentActive },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await http.put(`/api/banners/admin/${bannerId}`, {
+        is_active: !currentActive,
+      });
       await loadBanners();
     } catch (e) {
-      setErr(e.response?.data?.msg || "Cập nhật thất bại");
+      setErr(e?.response?.data?.msg || "Cập nhật thất bại");
     }
   }
 
   // Review actions
   async function updateReviewStatus(reviewId, status) {
     try {
-      await axios.patch(
-        `${API}/api/admin/reviews/${reviewId}/status`,
-        { status },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await http.patch(`/api/admin/reviews/${reviewId}/status`, { status });
       await loadReviews();
     } catch (e) {
-      setErr(e.response?.data?.msg || "Cập nhật thất bại");
+      setErr(e?.response?.data?.msg || "Cập nhật thất bại");
     }
   }
 
   async function deleteReview(reviewId) {
     if (!confirm("Bạn có chắc muốn xóa đánh giá này?")) return;
     try {
-      await axios.delete(`${API}/api/admin/reviews/${reviewId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await http.delete(`/api/admin/reviews/${reviewId}`);
       await loadReviews();
     } catch (e) {
-      setErr(e.response?.data?.msg || "Xóa thất bại");
+      setErr(e?.response?.data?.msg || "Xóa thất bại");
     }
   }
 
@@ -410,22 +377,14 @@ export default function AdminPage() {
       };
 
       if (editingRestaurant) {
-        await axios.put(
-          `${API}/api/admin/restaurants/${editingRestaurant.id}`,
-          data,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await http.put(`/api/admin/restaurants/${editingRestaurant.id}`, data);
       } else {
-        await axios.post(
-          `${API}/api/admin/restaurants`,
-          data,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await http.post(`/api/admin/restaurants`, data);
       }
       setShowRestaurantForm(false);
       await loadRestaurants();
     } catch (e) {
-      setErr(e.response?.data?.msg || "Lưu thất bại");
+      setErr(e?.response?.data?.msg || "Lưu thất bại");
     }
   }
 
@@ -479,23 +438,15 @@ export default function AdminPage() {
       };
 
       if (editingBanner) {
-        await axios.put(
-          `${API}/api/banners/admin/${editingBanner.id}`,
-          data,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await http.put(`/api/banners/admin/${editingBanner.id}`, data);
       } else {
-        await axios.post(
-          `${API}/api/banners/admin`,
-          data,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await http.post(`/api/banners/admin`, data);
       }
       setShowBannerForm(false);
       await loadBanners();
       setErr("");
     } catch (e) {
-      setErr(e.response?.data?.msg || "Lưu thất bại");
+      setErr(e?.response?.data?.msg || "Lưu thất bại");
     }
   }
 
@@ -647,7 +598,9 @@ export default function AdminPage() {
                     </div>
                     <p>{post.content}</p>
                     <div className="admin-item-footer">
-                      <span>ID: {post.id} • {new Date(post.created_at).toLocaleString()}</span>
+                      <span>
+                        ID: {post.id} • {new Date(post.created_at).toLocaleString()}
+                      </span>
                       <div className="admin-actions-group">
                         {post.status === "pending" && (
                           <>
@@ -660,10 +613,16 @@ export default function AdminPage() {
                           </>
                         )}
                         <button
-                          onClick={() => updatePostVisibility(post.id, post.visibility === "public" ? "hidden" : "public")}
+                          onClick={() =>
+                            updatePostVisibility(
+                              post.id,
+                              post.visibility === "public" ? "hidden" : "public"
+                            )
+                          }
                           className="btn-secondary"
                         >
-                          {post.visibility === "public" ? <FaEyeSlash /> : <FaEye />} {post.visibility === "public" ? "Ẩn" : "Hiện"}
+                          {post.visibility === "public" ? <FaEyeSlash /> : <FaEye />}{" "}
+                          {post.visibility === "public" ? "Ẩn" : "Hiện"}
                         </button>
                         <button onClick={() => deletePost(post.id)} className="btn-danger">
                           <FaTrash /> Xóa
@@ -695,7 +654,8 @@ export default function AdminPage() {
                       <div>
                         <strong>{user.name}</strong> ({user.email})
                         <div className="admin-meta">
-                          {user.post_count || 0} bài viết • {user.eating_plan_count || 0} kèo ăn • {user.review_count || 0} đánh giá
+                          {user.post_count || 0} bài viết • {user.eating_plan_count || 0} kèo ăn •{" "}
+                          {user.review_count || 0} đánh giá
                         </div>
                       </div>
                       <div className="admin-badges">
@@ -704,13 +664,16 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div className="admin-item-footer">
-                      <span>ID: {user.id} • {new Date(user.created_at).toLocaleString()}</span>
+                      <span>
+                        ID: {user.id} • {new Date(user.created_at).toLocaleString()}
+                      </span>
                       <div className="admin-actions-group">
                         <button
                           onClick={() => toggleUserLock(user.id, user.locked)}
                           className={user.locked ? "btn-success" : "btn-warning"}
                         >
-                          {user.locked ? <FaUnlock /> : <FaLock />} {user.locked ? "Mở khóa" : "Khóa"}
+                          {user.locked ? <FaUnlock /> : <FaLock />}{" "}
+                          {user.locked ? "Mở khóa" : "Khóa"}
                         </button>
                         {user.role === "user" ? (
                           <button onClick={() => changeUserRole(user.id, "admin")} className="btn-primary">
@@ -752,7 +715,10 @@ export default function AdminPage() {
                         <strong>{review.author_name}</strong> • {review.restaurant_name}
                         <div className="admin-meta">
                           ⭐{review.rating}/5
-                          {review.price_rating && ` (Giá: ${review.price_rating}, Món: ${review.food_rating || 'N/A'}, Vệ sinh: ${review.hygiene_rating || 'N/A'})`}
+                          {review.price_rating &&
+                            ` (Giá: ${review.price_rating}, Món: ${review.food_rating || "N/A"}, Vệ sinh: ${
+                              review.hygiene_rating || "N/A"
+                            })`}
                           • {review.media_count || 0} ảnh/video • {review.comment_count || 0} bình luận
                         </div>
                       </div>
@@ -764,7 +730,16 @@ export default function AdminPage() {
                     {review.media && review.media.length > 0 && (
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
                         {review.media.map((m, idx) => (
-                          <div key={idx} style={{ width: 100, height: 100, borderRadius: 8, overflow: "hidden", border: "1px solid var(--border)" }}>
+                          <div
+                            key={idx}
+                            style={{
+                              width: 100,
+                              height: 100,
+                              borderRadius: 8,
+                              overflow: "hidden",
+                              border: "1px solid var(--border)",
+                            }}
+                          >
                             {m.type === "image" ? (
                               <img src={m.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                             ) : (
@@ -775,7 +750,9 @@ export default function AdminPage() {
                       </div>
                     )}
                     <div className="admin-item-footer">
-                      <span>ID: {review.id} • {new Date(review.created_at).toLocaleString()}</span>
+                      <span>
+                        ID: {review.id} • {new Date(review.created_at).toLocaleString()}
+                      </span>
                       <div className="admin-actions-group">
                         {review.status === "pending" && (
                           <>
@@ -821,20 +798,18 @@ export default function AdminPage() {
                         <strong>{restaurant.name}</strong>
                         <div className="admin-meta">
                           {restaurant.type} • {restaurant.area} • {restaurant.price_range}
-                          {restaurant.avg_rating && ` • ⭐${restaurant.avg_rating} (${restaurant.review_count_actual || 0} đánh giá)`}
+                          {restaurant.avg_rating &&
+                            ` • ⭐${restaurant.avg_rating} (${restaurant.review_count_actual || 0} đánh giá)`}
                         </div>
                       </div>
-                      <div className="admin-badges">
-                        {restaurant.is_featured && <span className="badge badge-featured">Nổi bật</span>}
-                      </div>
+                      <div className="admin-badges">{restaurant.is_featured && <span className="badge badge-featured">Nổi bật</span>}</div>
                     </div>
                     <div className="admin-item-footer">
-                      <span>ID: {restaurant.id} • {new Date(restaurant.created_at).toLocaleString()}</span>
+                      <span>
+                        ID: {restaurant.id} • {new Date(restaurant.created_at).toLocaleString()}
+                      </span>
                       <div className="admin-actions-group">
-                        <button
-                          onClick={() => openRestaurantForm(restaurant)}
-                          className="btn-secondary"
-                        >
+                        <button onClick={() => openRestaurantForm(restaurant)} className="btn-secondary">
                           <FaEdit /> Sửa
                         </button>
                         <button
@@ -858,13 +833,18 @@ export default function AdminPage() {
 
         {showRestaurantForm && (
           <div className="modal-backdrop" onClick={() => setShowRestaurantForm(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 600, maxHeight: "90vh", overflowY: "auto" }}>
+            <div
+              className="modal-content"
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: 600, maxHeight: "90vh", overflowY: "auto" }}
+            >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                 <h2>{editingRestaurant ? "Sửa quán ăn" : "Thêm quán ăn mới"}</h2>
                 <button onClick={() => setShowRestaurantForm(false)} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer" }}>
                   ×
                 </button>
               </div>
+
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <div>
                   <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Tên quán *</label>
@@ -876,6 +856,7 @@ export default function AdminPage() {
                     required
                   />
                 </div>
+
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                   <div>
                     <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Loại</label>
@@ -887,6 +868,7 @@ export default function AdminPage() {
                       placeholder="Ví dụ: Mì Quảng"
                     />
                   </div>
+
                   <div>
                     <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Khu vực</label>
                     <input
@@ -898,6 +880,7 @@ export default function AdminPage() {
                     />
                   </div>
                 </div>
+
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                   <div>
                     <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Giá</label>
@@ -914,6 +897,7 @@ export default function AdminPage() {
                       <option value="200k+">200k+</option>
                     </select>
                   </div>
+
                   <div>
                     <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Thời gian</label>
                     <select
@@ -930,6 +914,7 @@ export default function AdminPage() {
                     </select>
                   </div>
                 </div>
+
                 <div>
                   <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Địa chỉ</label>
                   <input
@@ -940,6 +925,7 @@ export default function AdminPage() {
                     placeholder="Ví dụ: 123 Lê Duẩn, Hải Châu, Đà Nẵng"
                   />
                 </div>
+
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                   <div>
                     <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Vĩ độ</label>
@@ -952,6 +938,7 @@ export default function AdminPage() {
                       placeholder="16.0689"
                     />
                   </div>
+
                   <div>
                     <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Kinh độ</label>
                     <input
@@ -964,6 +951,7 @@ export default function AdminPage() {
                     />
                   </div>
                 </div>
+
                 <div>
                   <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>URL ảnh</label>
                   <input
@@ -974,6 +962,7 @@ export default function AdminPage() {
                     placeholder="https://..."
                   />
                 </div>
+
                 <div>
                   <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                     <input
@@ -984,6 +973,7 @@ export default function AdminPage() {
                     <span>Đánh dấu nổi bật</span>
                   </label>
                 </div>
+
                 <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
                   <button onClick={() => setShowRestaurantForm(false)} className="btn-secondary">
                     Hủy
@@ -1017,7 +1007,8 @@ export default function AdminPage() {
                       <div>
                         <strong>{banner.title}</strong>
                         <div className="admin-meta">
-                          {banner.restaurant_name ? `${banner.restaurant_name} • ` : ""}{banner.banner_type === "promotion" ? "Khuyến mãi" : "Booking"}
+                          {banner.restaurant_name ? `${banner.restaurant_name} • ` : ""}
+                          {banner.banner_type === "promotion" ? "Khuyến mãi" : "Booking"}
                           {banner.start_date && ` • Từ ${new Date(banner.start_date).toLocaleDateString()}`}
                           {banner.end_date && ` đến ${new Date(banner.end_date).toLocaleDateString()}`}
                         </div>
@@ -1028,19 +1019,19 @@ export default function AdminPage() {
                         </span>
                       </div>
                     </div>
+
                     {banner.description && <p>{banner.description}</p>}
+
                     {banner.image_url && (
                       <div style={{ marginTop: 8 }}>
                         <img src={banner.image_url} alt={banner.title} style={{ maxWidth: 200, borderRadius: 8 }} />
                       </div>
                     )}
+
                     <div className="admin-item-footer">
                       <span>ID: {banner.id} • Thứ tự: {banner.sort_order}</span>
                       <div className="admin-actions-group">
-                        <button
-                          onClick={() => openBannerForm(banner)}
-                          className="btn-secondary"
-                        >
+                        <button onClick={() => openBannerForm(banner)} className="btn-secondary">
                           <FaEdit /> Sửa
                         </button>
                         <button
@@ -1103,6 +1094,7 @@ export default function AdminPage() {
                     placeholder="VD: Giảm 20% hôm nay"
                   />
                 </div>
+
                 <div>
                   <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Mô tả</label>
                   <textarea
@@ -1112,6 +1104,7 @@ export default function AdminPage() {
                     placeholder="Mô tả chi tiết về khuyến mãi/booking..."
                   />
                 </div>
+
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                   <div>
                     <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Loại</label>
@@ -1124,6 +1117,7 @@ export default function AdminPage() {
                       <option value="booking">Nhận booking</option>
                     </select>
                   </div>
+
                   <div>
                     <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Thứ tự hiển thị</label>
                     <input
@@ -1135,6 +1129,7 @@ export default function AdminPage() {
                     />
                   </div>
                 </div>
+
                 <div>
                   <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Ảnh banner (URL)</label>
                   <input
@@ -1145,6 +1140,7 @@ export default function AdminPage() {
                     placeholder="https://example.com/banner.jpg"
                   />
                 </div>
+
                 <div>
                   <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Link khi click (URL, tùy chọn)</label>
                   <input
@@ -1155,6 +1151,7 @@ export default function AdminPage() {
                     placeholder="https://example.com hoặc để trống sẽ link đến trang quán"
                   />
                 </div>
+
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                   <div>
                     <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Ngày bắt đầu</label>
@@ -1165,6 +1162,7 @@ export default function AdminPage() {
                       style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
                     />
                   </div>
+
                   <div>
                     <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Ngày kết thúc</label>
                     <input
@@ -1175,6 +1173,7 @@ export default function AdminPage() {
                     />
                   </div>
                 </div>
+
                 <div>
                   <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <input
@@ -1185,6 +1184,7 @@ export default function AdminPage() {
                     <span>Hiển thị banner</span>
                   </label>
                 </div>
+
                 <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
                   <button onClick={() => setShowBannerForm(false)} className="btn-secondary">
                     Hủy
@@ -1215,8 +1215,8 @@ export default function AdminPage() {
                       <div>
                         <strong>{plan.title}</strong>
                         <div className="admin-meta">
-                          {plan.creator_name} • {plan.restaurant_name || "Không có quán"}
-                          • {plan.participant_count || 0} người tham gia
+                          {plan.creator_name} • {plan.restaurant_name || "Không có quán"} •{" "}
+                          {plan.participant_count || 0} người tham gia
                         </div>
                       </div>
                       <div className="admin-badges">
@@ -1225,7 +1225,9 @@ export default function AdminPage() {
                     </div>
                     {plan.description && <p>{plan.description}</p>}
                     <div className="admin-item-footer">
-                      <span>ID: {plan.id} • {new Date(plan.planned_at).toLocaleString()}</span>
+                      <span>
+                        ID: {plan.id} • {new Date(plan.planned_at).toLocaleString()}
+                      </span>
                       <div className="admin-actions-group">
                         <button onClick={() => deleteEatingPlan(plan.id)} className="btn-danger">
                           <FaTrash /> Xóa
@@ -1266,7 +1268,9 @@ export default function AdminPage() {
                     </div>
                     {room.description && <p>{room.description}</p>}
                     <div className="admin-item-footer">
-                      <span>ID: {room.id} • {new Date(room.created_at).toLocaleString()}</span>
+                      <span>
+                        ID: {room.id} • {new Date(room.created_at).toLocaleString()}
+                      </span>
                       <div className="admin-actions-group">
                         <button onClick={() => deleteChatRoom(room.id)} className="btn-danger">
                           <FaTrash /> Xóa

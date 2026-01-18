@@ -1,7 +1,8 @@
 import axios from "axios";
 
 export const http = axios.create({
-  baseURL: "http://localhost:5000",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000",
+  withCredentials: true, // nếu backend dùng cookie/refreshToken
 });
 
 http.interceptors.request.use((config) => {

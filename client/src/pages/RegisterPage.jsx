@@ -1,8 +1,6 @@
 import { useState } from "react";
-import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-
-const API = "http://localhost:5000";
+import { http } from "../api/http"; // nếu file nằm trong src/pages/RegisterPage.jsx
 
 export default function RegisterPage() {
   const nav = useNavigate();
@@ -23,11 +21,11 @@ export default function RegisterPage() {
 
     try {
       setLoading(true);
-      await axios.post(`${API}/api/auth/register`, { name, email, password });
+      await http.post("/api/auth/register", { name, email, password });
       alert("Đăng ký thành công! Hãy đăng nhập.");
       nav("/login");
     } catch (e) {
-      setErr(e.response?.data?.msg || "Đăng ký thất bại.");
+      setErr(e?.response?.data?.msg || "Đăng ký thất bại.");
     } finally {
       setLoading(false);
     }
