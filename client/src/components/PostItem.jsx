@@ -4,6 +4,15 @@ import { Link } from "react-router-dom";
 import CommentBox from "./CommentBox";
 import { http } from "../api/http";
 import { getUser } from "../auth";
+import {
+  FaHeart,
+  FaRegHeart,
+  FaComment,
+  FaShareAlt,
+  FaEllipsisV,
+  FaEdit,
+  FaTrash,
+} from "react-icons/fa";
 
 function fmtTime(ts) {
   try {
@@ -17,6 +26,7 @@ function fmtTime(ts) {
 export default function PostItem({ post, onLike, onChanged, children, autoOpenComments = false }) {
   const [openCmt, setOpenCmt] = useState(autoOpenComments);
   const [copied, setCopied] = useState(false);
+  const [isLiked, setIsLiked] = useState(post?.is_liked || false);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -25,6 +35,7 @@ export default function PostItem({ post, onLike, onChanged, children, autoOpenCo
 
   useEffect(() => setOpenCmt(autoOpenComments), [autoOpenComments]);
   useEffect(() => setDraft(post?.content || ""), [post?.content]);
+  useEffect(() => setIsLiked(post?.is_liked || false), [post?.is_liked]);
 
   const author = post?.author_name || "User";
   const avatarChar = useMemo(() => (author?.trim()?.[0] || "U").toUpperCase(), [author]);
@@ -82,7 +93,9 @@ export default function PostItem({ post, onLike, onChanged, children, autoOpenCo
 
           <div className="post-meta">
             <div className="post-author-row">
-              <div className="post-author truncate">{author}</div>
+              <Link to={`/users/${post.user_id}`} className="post-author truncate" style={{ textDecoration: "none", color: "inherit" }}>
+                {author}
+              </Link>
 
               <div className="post-head-actions">
                 <Link className="btn-mini" to={`/posts/${post.id}`} title="Mở trang bài viết">
@@ -91,26 +104,36 @@ export default function PostItem({ post, onLike, onChanged, children, autoOpenCo
 
                 {canManage && (
                   <div className="menuWrap">
-                    <button type="button" className="btn-mini" onClick={() => setMenuOpen((x) => !x)}>
-                      …
+                    <button
+                      type="button"
+                      className="btn-menu-trigger"
+                      onClick={() => setMenuOpen((x) => !x)}
+                      title="Tùy chọn"
+                    >
+                      <FaEllipsisV />
                     </button>
 
                     {menuOpen && (
-                      <div className="menu">
-                        <button
-                          type="button"
-                          className="menuItem"
-                          onClick={() => {
-                            setEditing(true);
-                            setMenuOpen(false);
-                          }}
-                        >
-                          Sửa bài
-                        </button>
-                        <button type="button" className="menuItem danger" onClick={handleDelete}>
-                          Xoá bài
-                        </button>
-                      </div>
+                      <>
+                        <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
+                        <div className="menu menu-post">
+                          <button
+                            type="button"
+                            className="menuItem"
+                            onClick={() => {
+                              setEditing(true);
+                              setMenuOpen(false);
+                            }}
+                          >
+                            <span className="menuIcon"><FaEdit /></span>
+                            <span>Sửa bài</span>
+                          </button>
+                          <button type="button" className="menuItem danger" onClick={handleDelete}>
+                            <span className="menuIcon"><FaTrash /></span>
+                            <span>Xoá bài</span>
+                          </button>
+                        </div>
+                      </>
                     )}
                   </div>
                 )}
@@ -161,16 +184,28 @@ export default function PostItem({ post, onLike, onChanged, children, autoOpenCo
 
       {/* actions: Like -> Comment -> Share */}
       <div className="post-actions">
-        <button type="button" className="act" onClick={() => onLike?.(post.id)}>
-          Thích
+        <button
+          type="button"
+          className={`act act-like ${isLiked ? "act-liked" : ""}`}
+          onClick={() => {
+            setIsLiked(!isLiked);
+            onLike?.(post.id);
+          }}
+        >
+          <span className="act-icon">
+            {isLiked ? <FaHeart /> : <FaRegHeart />}
+          </span>
+          <span className="act-text">{isLiked ? "Đã thích" : "Thích"}</span>
         </button>
 
-        <button type="button" className="act" onClick={toggleComment}>
-          Bình luận
+        <button type="button" className="act act-comment" onClick={toggleComment}>
+          <span className="act-icon"><FaComment /></span>
+          <span className="act-text">Bình luận</span>
         </button>
 
-        <button type="button" className="act" onClick={copyShare}>
-          Chia sẻ {copied ? "✓" : ""}
+        <button type="button" className="act act-share" onClick={copyShare}>
+          <span className="act-icon"><FaShareAlt /></span>
+          <span className="act-text">Chia sẻ {copied ? "✓" : ""}</span>
         </button>
       </div>
 

@@ -3,8 +3,22 @@ const express = require("express");
 const pool = require("../db");
 const auth = require("../middleware/auth");
 const filterText = require("../utils/filterText");
+const jwt = require("jsonwebtoken");
 
 const router = express.Router();
+
+// Optional auth: check token but don't fail if missing
+function optionalAuth(req, res, next) {
+  try {
+    const header = req.headers.authorization || "";
+    const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+    if (token) {
+      const payload = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = payload;
+    }
+  } catch {}
+  next();
+}
 
 async function canManagePost(postId, uid) {
   const [rows] = await pool.query("SELECT user_id FROM posts WHERE id = ? LIMIT 1", [postId]);
@@ -16,7 +30,7 @@ async function canManagePost(postId, uid) {
  * GET /api/posts
  * Feed: public posts
  */
-router.get("/", async (req, res) => {
+router.get("/", optionalAuth, async (req, res) => {
   try {
     const [posts] = await pool.query(`
       SELECT
@@ -55,10 +69,21 @@ router.get("/", async (req, res) => {
       }
     }
 
+    // Check which posts are liked by current user (if logged in)
+    let likedPostIds = new Set();
+    if (req.user?.uid && ids.length) {
+      const [likedRows] = await pool.query(
+        `SELECT post_id FROM post_likes WHERE post_id IN (${ids.map(() => "?").join(",")}) AND user_id = ?`,
+        [...ids, req.user.uid]
+      );
+      likedRows.forEach((row) => likedPostIds.add(row.post_id));
+    }
+
     res.json(
       posts.map((p) => ({
         ...p,
         media: mediaByPost.get(p.id) || [],
+        is_liked: likedPostIds.has(p.id),
       }))
     );
   } catch (e) {
@@ -71,7 +96,7 @@ router.get("/", async (req, res) => {
  * GET /api/posts/:id
  * Detail
  */
-router.get("/:id", async (req, res) => {
+router.get("/:id", optionalAuth, async (req, res) => {
   try {
     const postId = Number(req.params.id);
     const [rows] = await pool.query(
@@ -102,9 +127,20 @@ router.get("/:id", async (req, res) => {
       [postId]
     );
 
+    // Check if current user liked this post
+    let isLiked = false;
+    if (req.user?.uid) {
+      const [likedRows] = await pool.query(
+        "SELECT 1 FROM post_likes WHERE post_id = ? AND user_id = ?",
+        [postId, req.user.uid]
+      );
+      isLiked = likedRows.length > 0;
+    }
+
     res.json({
       ...post,
       media: mediaRows || [],
+      is_liked: isLiked,
     });
   } catch (e) {
     console.error("GET POST DETAIL ERROR:", e);
@@ -135,9 +171,10 @@ router.post("/", auth, async (req, res) => {
       if (Number.isNaN(r) || r < 1 || r > 5) return res.status(400).json({ msg: "Rating phải từ 1 đến 5" });
     }
 
+    // Posts (status type) are always approved, no need for approval
     const [ins] = await pool.query(
-      `INSERT INTO posts (user_id, type, restaurant_id, rating, content, visibility)
-       VALUES (?, ?, ?, ?, ?, 'public')`,
+      `INSERT INTO posts (user_id, type, restaurant_id, rating, content, visibility, status)
+       VALUES (?, ?, ?, ?, ?, 'public', 'approved')`,
       [req.user.uid, postType, rId, r, safeContent]
     );
 

@@ -27,10 +27,16 @@ app.get("/", (req, res) => res.json({ ok: true, msg: "Foodbook API running" }));
 
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/posts", require("./routes/posts"));
+app.use("/api/reviews", require("./routes/reviews"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/restaurants", require("./routes/restaurants"));
 app.use("/api/upload", require("./routes/upload"));
 app.use("/api/comments", require("./routes/comments"));
+app.use("/api/eating-plans", require("./routes/eatingPlans"));
+app.use("/api/eating-plans", require("./routes/eatingPlanComments"));
+app.use("/api/users", require("./routes/users"));
+app.use("/api/chat", require("./routes/chat"));
+app.use("/api/banners", require("./routes/banners"));
 
 
 const PORT = process.env.PORT || 5000;

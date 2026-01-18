@@ -10,6 +10,7 @@ import {
   FaSearch,
   FaMapMarkerAlt,
 } from "react-icons/fa";
+import BannerCarousel from "./BannerCarousel";
 
 export default function AppLayout({ children }) {
   const user = getUser();
@@ -119,12 +120,7 @@ export default function AppLayout({ children }) {
 
           {/* Right column (giữ nhưng gọn) */}
           <div style={{ width: 280, position: "sticky", top: 78, alignSelf: "flex-start" }} className="hide-right">
-            <div className="card soft side-section">
-              <div className="side-title">Gợi ý</div>
-              <div className="muted" style={{ fontSize: 13, lineHeight: 1.6 }}>
-                Đăng status rủ kèo ăn • Hỏi quán ngon • Chia sẻ trải nghiệm
-              </div>
-            </div>
+            <BannerCarousel />
           </div>
         </div>
       </div>

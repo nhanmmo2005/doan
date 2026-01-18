@@ -7,6 +7,9 @@ import RestaurantDetailPage from "./pages/RestaurantDetailPage";
 import AdminPage from "./pages/admin/AdminPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PostDetailPage from "./pages/PostDetailPage";
+import KeoAnPage from "./pages/KeoAnPage";
+import ProfilePage from "./pages/ProfilePage";
+import ChatPage from "./pages/ChatPage";
 
 function Placeholder({ title }) {
   return (
@@ -53,12 +56,11 @@ export default function App() {
         }
       />
 
-      {/* Chưa làm thì tạm placeholder */}
       <Route
         path="/keo-an"
         element={
           <ProtectedRoute>
-            <Placeholder title="Kèo ăn" />
+            <KeoAnPage />
           </ProtectedRoute>
         }
       />
@@ -66,7 +68,7 @@ export default function App() {
         path="/chat"
         element={
           <ProtectedRoute>
-            <Placeholder title="Chat" />
+            <ChatPage />
           </ProtectedRoute>
         }
       />
@@ -74,7 +76,15 @@ export default function App() {
         path="/me"
         element={
           <ProtectedRoute>
-            <Placeholder title="Cá nhân" />
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/users/:id"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
           </ProtectedRoute>
         }
       />

@@ -569,7 +569,12 @@ body{ background: var(--bg); color: var(--text); }
   max-width: 100%;
 }
 
-.post-head-actions{ flex: 0 0 auto; }
+.post-head-actions{ 
+  flex: 0 0 auto; 
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .btn-mini{
   display:inline-flex;
   align-items:center;
@@ -582,6 +587,101 @@ body{ background: var(--bg); color: var(--text); }
   font-size: 12px;
   color: #111827;
   text-decoration: none;
+  transition: all 0.15s ease;
+}
+.btn-mini:hover{
+  background: rgba(0,0,0,.05);
+}
+
+/* Menu dropdown */
+.menuWrap{
+  position: relative;
+}
+.btn-menu-trigger{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-menu-trigger:hover{
+  background: rgba(0,0,0,.06);
+  color: var(--text);
+}
+.btn-menu-trigger svg{
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.menu-backdrop{
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+  background: transparent;
+}
+
+.menu{
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 999;
+  min-width: 180px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+}
+
+.menuItem{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  width: 100%;
+}
+.menuItem:hover{
+  background: rgba(0,0,0,.05);
+}
+.menuItem.danger{
+  color: #dc2626;
+}
+.menuItem.danger:hover{
+  background: rgba(220,38,38,0.1);
+  color: #b91c1c;
+}
+.menuIcon{
+  font-size: 18px;
+  line-height: 1;
+  width: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.menuIcon svg{
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 .post-content{
@@ -638,20 +738,85 @@ body{ background: var(--bg); color: var(--text); }
 }
 
 .post-actions{
-  margin-top: 10px;
+  margin-top: 8px;
   display:flex;
-  gap: 8px;
+  gap: 4px;
   border-top: 1px solid var(--border);
-  padding-top: 10px;
+  padding-top: 8px;
+  margin-left: -4px;
+  margin-right: -4px;
 }
 .post-actions .act{
   flex:1;
-  border: 1px solid var(--border);
-  background: rgba(0,0,0,.02);
-  border-radius: 12px;
-  padding: 10px 10px;
-  font-weight: 800;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--muted);
+  transition: all 0.15s ease;
+  position: relative;
+}
+.post-actions .act:hover{
+  background: rgba(0,0,0,.05);
+  color: var(--text);
+}
+.post-actions .act:active{
+  transform: scale(0.97);
+}
+.post-actions .act-icon{
+  font-size: 18px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+.post-actions .act-icon svg{
+  width: 18px;
+  height: 18px;
+}
+.post-actions .act:hover .act-icon{
+  transform: scale(1.1);
+}
+.post-actions .act-text{
+  display: inline-block;
+}
+
+/* Like button - Facebook style with color */
+.post-actions .act-like.act-liked{
+  color: #1877f2;
+  background: rgba(24,119,242,0.08);
+}
+.post-actions .act-like.act-liked:hover{
+  background: rgba(24,119,242,0.12);
+  color: #1877f2;
+}
+.post-actions .act-like.act-liked .act-icon{
+  animation: likePop 0.3s ease;
+}
+@keyframes likePop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3) rotate(-10deg); }
+  100% { transform: scale(1); }
+}
+
+/* Comment button - subtle hover */
+.post-actions .act-comment:hover{
+  color: #1877f2;
+  background: rgba(24,119,242,0.08);
+}
+
+/* Share button */
+.post-actions .act-share:hover{
+  color: #42b72a;
+  background: rgba(66,183,42,0.08);
 }
 .post-comments{ margin-top: 10px; }
 
@@ -724,14 +889,19 @@ body{ background: var(--bg); color: var(--text); }
   background:#fff;
   text-decoration: none;
   display:block;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.cmt-media-item:hover {
+  transform: scale(1.05);
 }
 .cmt-media-item img{ width:100%; height:100%; object-fit: cover; display:block; }
 .cmt-videoTag{
   width:100%; height:100%;
   display:grid; place-items:center;
   font-weight: 900;
-  color: #111827;
-  background: rgba(0,0,0,.03);
+  color: rgba(255,255,255,0.9);
+  background: rgba(0,0,0,0.6);
 }
 
 /* Lightbox */
@@ -825,7 +995,11 @@ input {
 
 /* Post card spacing */
 .post-card {
-  padding: 14px;
+  padding: 14px 16px;
+  transition: box-shadow 0.2s ease;
+}
+.post-card:hover {
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
 }
 .post-head {
   display: flex;
@@ -1073,14 +1247,26 @@ input {
 }
 
 .cmt-replies{
-  margin-left: 42px;          /* indent cố định */
+  margin-left: 42px;          /* indent cố định cho level 1 */
   padding-left: 12px;
   border-left: 2px solid rgba(0,0,0,0.08);
   max-width: calc(100% - 42px);
 }
 
+/* Fix: nested replies không tích lũy margin-left */
+.cmt-replies .cmt-replies {
+  margin-left: 0 !important;  /* không thêm margin cho nested */
+  max-width: 100% !important; /* giữ nguyên width */
+  /* chỉ dùng padding-left và border để tạo visual indent nhẹ */
+  padding-left: 12px;
+}
+
 @media (max-width: 520px){
   .cmt-replies { margin-left: 34px; max-width: calc(100% - 34px); }
+  .cmt-replies .cmt-replies { 
+    margin-left: 0 !important; 
+    max-width: 100% !important; 
+  }
 }
 
 .cmt-rowActions{
@@ -1147,4 +1333,2166 @@ input {
   background: rgba(0,0,0,0.6);
   color: white;
   line-height: 22px;
+}
+
+/* ===== Comment Compose Styles ===== */
+.cmt-compose {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.cmt-composeHint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  padding: 8px;
+  background: var(--chip);
+  border-radius: 6px;
+}
+
+.cmt-composeHint .linkBtn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-size: inherit;
+}
+
+.cmt-composeRow {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cmt-composeRow textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.cmt-composeRow textarea:focus {
+  border-color: var(--primary);
+}
+
+.cmt-composeTools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cmt-composeTools .chip {
+  padding: 8px 16px;
+  background: var(--chip);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cmt-composeTools .chip:hover {
+  background: var(--border);
+}
+
+.cmt-composeTools .primary {
+  padding: 8px 20px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cmt-composeTools .primary:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.cmt-composeTools .primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== Kèo ăn (Eating Plans) ===== */
+.keo-an-card{
+  padding: 16px;
+  transition: box-shadow 0.2s ease;
+}
+.keo-an-card:hover{
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+}
+
+.keo-an-header{
+  margin-bottom: 12px;
+}
+
+.keo-an-title-row{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.keo-an-title{
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.keo-an-meta{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.keo-an-creator{
+  font-weight: 700;
+}
+
+.keo-an-status{
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.05);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.keo-an-description{
+  margin: 12px 0;
+  padding: 12px;
+  background: rgba(0,0,0,0.02);
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.keo-an-info{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.keo-an-info-item{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.keo-an-icon{
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.keo-an-badge{
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(220,38,38,0.1);
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.keo-an-actions{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.keo-an-joined-badge{
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(16,185,129,0.1);
+  color: #10b981;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.keo-an-form-card{
+  padding: 20px;
+}
+
+.keo-an-form-card h2{
+  font-size: 20px;
+  font-weight: 1000;
+  color: var(--text);
+}
+
+.keo-an-form-card label{
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.keo-an-form-card input[type="datetime-local"]{
+  font-family: inherit;
+}
+
+/* ===== Modal for Eating Plan Form ===== */
+.modal-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content{
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--card);
+  z-index: 10;
+}
+
+.modal-title{
+  margin: 0;
+  font-size: 20px;
+  font-weight: 1000;
+  color: var(--text);
+}
+
+.modal-close{
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.05);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.modal-close:hover{
+  background: rgba(0,0,0,0.1);
+}
+
+.modal-close svg{
+  width: 18px;
+  height: 18px;
+}
+
+.modal-body{
+  padding: 24px;
+  flex: 1;
+}
+
+.keo-an-modal .form-field{
+  margin-bottom: 20px;
+}
+
+.keo-an-modal .form-label{
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.keo-an-modal .form-input,
+.keo-an-modal .form-textarea{
+  width: 100%;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: var(--radius2);
+  padding: 12px 14px;
+  outline: none;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.keo-an-modal .form-input:focus,
+.keo-an-modal .form-textarea:focus{
+  border-color: rgba(255,90,47,0.35);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.keo-an-modal .form-textarea{
+  resize: vertical;
+  min-height: 100px;
+}
+
+.keo-an-modal .form-actions{
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.keo-an-modal .form-actions .primary{
+  min-width: 120px;
+}
+
+/* ===== Profile Page ===== */
+.profile-header{
+  padding: 24px;
+}
+
+.profile-avatar-section{
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.profile-avatar-wrapper{
+  position: relative;
+  flex-shrink: 0;
+}
+
+.profile-avatar-large{
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--border);
+  background: rgba(255,90,47,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--primary);
+}
+
+.profile-avatar-large img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.profile-avatar-placeholder{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-upload-label{
+  cursor: pointer;
+  position: relative;
+  display: block;
+}
+
+.avatar-upload-overlay{
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+  gap: 4px;
+}
+
+.avatar-upload-label:hover .avatar-upload-overlay{
+  opacity: 1;
+}
+
+.avatar-upload-overlay svg{
+  width: 24px;
+  height: 24px;
+}
+
+.profile-info{
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-name{
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 1000;
+  color: var(--text);
+}
+
+.profile-bio{
+  margin: 0 0 16px 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.profile-stats{
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.profile-stat-item{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.profile-stat-icon{
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+}
+
+.profile-edit-input,
+.profile-edit-textarea{
+  width: 100%;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: var(--radius2);
+  padding: 12px 14px;
+  outline: none;
+  font-size: 15px;
+  font-family: inherit;
+  margin-bottom: 12px;
+  transition: all 0.15s ease;
+}
+
+.profile-edit-input:focus,
+.profile-edit-textarea:focus{
+  border-color: rgba(255,90,47,0.35);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.profile-edit-textarea{
+  resize: vertical;
+  min-height: 100px;
+}
+
+.profile-edit-actions{
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.profile-tabs{
+  padding: 12px 16px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.profile-tabs .tab{
+  display: flex;
+  align-items: center;
+}
+
+/* ===== Chat Cộng Đồng ===== */
+.chat-page{
+  display: flex;
+  height: calc(100vh - 80px);
+  gap: 0;
+  max-width: var(--max);
+  margin: 0 auto;
+  background: var(--card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.chat-sidebar{
+  width: 320px;
+  min-width: 280px;
+  border-right: 1px solid var(--border);
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-sidebar-header{
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.chat-sidebar-header h2{
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-create-btn{
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.chat-create-btn:hover{
+  background: var(--primary2);
+  transform: scale(1.05);
+}
+
+.chat-create-btn svg{
+  width: 16px;
+  height: 16px;
+}
+
+.chat-create-form{
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.02);
+}
+
+.chat-empty-rooms{
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.chat-room-list{
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  scroll-behavior: smooth;
+  /* Custom scrollbar for better UX */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.2) transparent;
+}
+
+.chat-room-list::-webkit-scrollbar{
+  width: 8px;
+}
+
+.chat-room-list::-webkit-scrollbar-track{
+  background: transparent;
+}
+
+.chat-room-list::-webkit-scrollbar-thumb{
+  background: rgba(0,0,0,0.2);
+  border-radius: 4px;
+}
+
+.chat-room-list::-webkit-scrollbar-thumb:hover{
+  background: rgba(0,0,0,0.3);
+}
+
+.chat-room-item{
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.chat-room-item:hover{
+  background: rgba(0,0,0,0.03);
+}
+
+.chat-room-item.active{
+  background: rgba(255,90,47,0.08);
+  border-left: 3px solid var(--primary);
+}
+
+.chat-room-icon{
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255,90,47,0.12);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.chat-room-info{
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-room-name{
+  font-weight: 900;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-room-desc{
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.chat-room-meta{
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.chat-window{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  min-width: 0;
+}
+
+.chat-window-empty{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.chat-messages{
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-behavior: smooth;
+  /* Custom scrollbar for better UX */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.2) transparent;
+}
+
+.chat-messages::-webkit-scrollbar{
+  width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track{
+  background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb{
+  background: rgba(0,0,0,0.2);
+  border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover{
+  background: rgba(0,0,0,0.3);
+}
+
+.chat-loading,
+.chat-empty{
+  text-align: center;
+  color: var(--muted);
+  padding: 40px 20px;
+}
+
+.chat-message{
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  max-width: 70%;
+}
+
+.chat-message-me{
+  align-self: flex-end;
+  flex-direction: row-reverse;
+  margin-left: auto;
+}
+
+.chat-avatar{
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255,90,47,0.12);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  flex-shrink: 0;
+  text-decoration: none;
+  border: 2px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.chat-avatar:hover{
+  border-color: var(--primary);
+}
+
+.chat-avatar img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.chat-message-content{
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.chat-message-author{
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.chat-message-bubble{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 10px 12px;
+  position: relative;
+}
+
+.chat-message-me .chat-message-bubble{
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.chat-message-text{
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: break-word;
+  white-space: pre-wrap;
+  margin-bottom: 6px;
+}
+
+.chat-message-me .chat-message-text{
+  color: white;
+}
+
+.chat-message-media{
+  margin-top: 8px;
+  margin-bottom: 6px;
+}
+
+.chat-message-media img{
+  max-width: 300px;
+  max-height: 300px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: block;
+}
+
+.chat-message-media video{
+  max-width: 400px;
+  max-height: 400px;
+  border-radius: 12px;
+  display: block;
+}
+
+.chat-message-time{
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.chat-message-me .chat-message-time{
+  color: rgba(255,255,255,0.8);
+}
+
+.chat-message-delete{
+  position: absolute;
+  top: 0;
+  right: -32px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(220,38,38,0.1);
+  color: #dc2626;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: all 0.15s ease;
+}
+
+.chat-message:hover .chat-message-delete{
+  display: flex;
+}
+
+.chat-message-delete:hover{
+  opacity: 1;
+  background: rgba(220,38,38,0.2);
+}
+
+.chat-message-delete svg{
+  width: 12px;
+  height: 12px;
+}
+
+.chat-input-form{
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  padding: 12px 16px;
+  flex-shrink: 0;
+}
+
+.chat-media-preview{
+  position: relative;
+  margin-bottom: 8px;
+  display: inline-block;
+}
+
+.chat-media-preview img{
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.chat-media-remove{
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.chat-input-row{
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.chat-attach-btn,
+.chat-send-btn{
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.05);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.chat-attach-btn:hover{
+  background: rgba(0,0,0,0.08);
+}
+
+.chat-send-btn{
+  background: var(--primary);
+  color: white;
+}
+
+.chat-send-btn:hover:not(:disabled){
+  background: var(--primary2);
+  transform: scale(1.05);
+}
+
+.chat-send-btn:disabled{
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chat-attach-btn svg,
+.chat-send-btn svg{
+  width: 18px;
+  height: 18px;
+}
+
+.chat-text-input{
+  flex: 1;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.chat-text-input:focus{
+  border-color: rgba(255,90,47,0.35);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+/* Restaurant Page Styles */
+.restaurant-search-bar{
+  margin-bottom: 16px;
+}
+
+.restaurant-search-input-wrapper{
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.restaurant-search-icon{
+  position: absolute;
+  left: 16px;
+  color: var(--muted);
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+}
+
+.restaurant-search-input{
+  width: 100%;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 999px;
+  padding: 12px 16px 12px 44px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.restaurant-search-input:focus{
+  border-color: rgba(255,90,47,0.35);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.restaurant-search-clear{
+  position: absolute;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.05);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.restaurant-search-clear:hover{
+  background: rgba(0,0,0,0.1);
+}
+
+.restaurant-search-clear svg{
+  width: 12px;
+  height: 12px;
+}
+
+.restaurant-filters{
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.restaurant-filter-row{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.restaurant-filter-group{
+  display: flex;
+  flex-direction: column;
+}
+
+.restaurant-filter-select{
+  width: 100%;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.restaurant-filter-select:focus{
+  border-color: rgba(255,90,47,0.35);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.restaurant-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.restaurant-card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+}
+
+.restaurant-card:hover{
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  border-color: var(--primary);
+}
+
+.restaurant-card-image{
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  background: var(--bg);
+  position: relative;
+}
+
+.restaurant-card-image img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.restaurant-card:hover .restaurant-card-image img{
+  transform: scale(1.05);
+}
+
+.restaurant-card-placeholder{
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 48px;
+}
+
+.restaurant-card-content{
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.restaurant-card-name{
+  font-weight: 900;
+  font-size: 16px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.restaurant-card-meta{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.restaurant-card-meta-item{
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.restaurant-card-meta-item svg{
+  width: 12px;
+  height: 12px;
+  color: var(--primary);
+}
+
+.restaurant-card-address{
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+@media (max-width: 768px){
+  .chat-page{
+    flex-direction: column;
+    height: auto;
+    min-height: calc(100vh - 80px);
+  }
+  
+  .chat-sidebar{
+    width: 100%;
+    max-height: 40vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .chat-window{
+    min-height: 60vh;
+  }
+  
+  .chat-message{
+    max-width: 85%;
+  }
+  
+  .chat-message-media img{
+    max-width: 250px;
+    max-height: 250px;
+  }
+  
+  .chat-message-media video{
+    max-width: 280px;
+    max-height: 280px;
+  }
+  
+  .chat-input-form{
+    padding: 10px 12px;
+  }
+  
+  .chat-attach-btn,
+  .chat-send-btn{
+    width: 36px;
+    height: 36px;
+  }
+  
+  .chat-text-input{
+    padding: 8px 14px;
+    font-size: 14px;
+  }
+  
+  .restaurant-filter-row{
+    grid-template-columns: 1fr;
+  }
+  
+  .restaurant-grid{
+    grid-template-columns: 1fr;
+  }
+  
+  .restaurant-card-image{
+    height: 180px;
+  }
+}
+
+/* Restaurant Rating Styles */
+.restaurant-card-wrapper{
+  position: relative;
+}
+
+.restaurant-featured-badge{
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--primary);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  z-index: 2;
+}
+
+.restaurant-card-rating{
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.restaurant-rating-wrapper{
+  position: relative;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.restaurant-rating-stars{
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.restaurant-rating-text{
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.restaurant-rating-popup{
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 10;
+  min-width: 200px;
+}
+
+.restaurant-rating-popup-stars{
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.restaurant-rating-popup textarea{
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  resize: vertical;
+  outline: none;
+}
+
+.restaurant-rating-popup textarea:focus{
+  border-color: var(--primary);
+}
+
+/* Restaurant Detail Page Styles */
+.restaurant-detail-meta{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.restaurant-detail-meta-item{
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.restaurant-detail-meta-item svg{
+  width: 14px;
+  height: 14px;
+  color: var(--primary);
+}
+
+.restaurant-review-form-stars{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.restaurant-review-form-stars button{
+  transition: transform 0.15s ease;
+}
+
+.restaurant-review-form-stars button:hover{
+  transform: scale(1.1);
+}
+
+.restaurant-reviews-list{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.restaurant-review-item{
+  position: relative;
+  padding: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.15s ease;
+}
+
+.restaurant-review-item:hover{
+  border-color: var(--primary);
+}
+
+.restaurant-review-header{
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.restaurant-review-author{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.restaurant-review-avatar-char{
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255,90,47,0.12);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.restaurant-review-author img{
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.restaurant-review-author-name{
+  font-weight: 900;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.restaurant-review-time{
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.restaurant-review-rating{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  align-items: flex-end;
+}
+
+.restaurant-review-comment{
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.restaurant-review-delete{
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(220,38,38,0.1);
+  color: #dc2626;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: all 0.15s ease;
+}
+
+.restaurant-review-item:hover .restaurant-review-delete{
+  display: flex;
+}
+
+.restaurant-review-delete:hover{
+  opacity: 1;
+  background: rgba(220,38,38,0.2);
+}
+
+.restaurant-review-delete svg{
+  width: 12px;
+  height: 12px;
+}
+
+@media (max-width: 768px){
+  .restaurant-rating-popup{
+    left: -20px;
+    right: -20px;
+  }
+  
+  .restaurant-detail-meta{
+    font-size: 13px;
+  }
+  
+  .restaurant-review-item{
+    padding: 12px;
+  }
+}
+
+/* ============================================================
+   ADMIN PAGE STYLES
+   ============================================================ */
+
+.admin-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.admin-header {
+  margin-bottom: 24px;
+}
+
+.admin-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: var(--text);
+}
+
+.admin-header p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid var(--border);
+  overflow-x: auto;
+}
+
+.admin-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.admin-tab:hover {
+  color: var(--text);
+  background: var(--card);
+}
+
+.admin-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+.admin-tab svg {
+  width: 16px;
+  height: 16px;
+}
+
+.admin-dashboard {
+  margin-top: 24px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.stat-detail {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-content {
+  margin-top: 24px;
+}
+
+.admin-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-item {
+  padding: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.admin-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.admin-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  gap: 16px;
+}
+
+.admin-item-header > div:first-child {
+  flex: 1;
+}
+
+.admin-meta {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.admin-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-public {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-hidden {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.badge-admin {
+  background: #fce7f3;
+  color: #9f1239;
+}
+
+.badge-user {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.badge-locked {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-featured {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-open {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-closed {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.badge-active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-archived {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.admin-item-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-actions-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-success,
+.btn-danger,
+.btn-warning {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--chip);
+  color: var(--text);
+}
+
+.btn-secondary:hover {
+  background: var(--border);
+}
+
+.btn-success {
+  background: #10b981;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #059669;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+.btn-warning {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-warning:hover {
+  background: #d97706;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .admin-page {
+    padding: 12px;
+  }
+
+  .admin-tabs {
+    gap: 4px;
+  }
+
+  .admin-tab {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-item-header {
+    flex-direction: column;
+  }
+
+  .admin-item-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-actions-group {
+    width: 100%;
+  }
+
+  .admin-actions-group button {
+    flex: 1;
+  }
+}
+
+/* ============================================================
+   REVIEW COMMENT BOX STYLES
+   ============================================================ */
+
+.review-comment-box {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.review-comment-form {
+  margin-bottom: 16px;
+}
+
+.review-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.review-comment-item {
+  padding: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.review-comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.review-comment-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.review-comment-avatar-char {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.review-comment-author img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.review-comment-author-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.review-comment-time {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.review-comment-content {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.review-comment-delete {
+  background: rgba(220, 38, 38, 0.1);
+  border: none;
+  color: #dc2626;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.review-comment-delete:hover {
+  background: rgba(220, 38, 38, 0.2);
+}
+
+.review-comment-reply-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.review-comment-reply-btn:hover {
+  text-decoration: underline;
+}
+
+.review-comment-reply-form {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.review-comment-replies {
+  margin-top: 12px;
+  padding-left: 16px;
+  border-left: 2px solid var(--border);
+}
+
+/* ====== Banner Carousel ====== */
+.banner-carousel-wrapper {
+  overflow: hidden;
+}
+
+.banner-carousel {
+  position: relative;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.banner-slide {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius2);
+  overflow: hidden;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 200px;
+}
+
+.banner-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+}
+
+.banner-placeholder {
+  width: 100%;
+  height: 180px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.banner-placeholder-icon {
+  font-size: 48px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.banner-content {
+  padding: 14px;
+  background: var(--card);
+}
+
+.banner-restaurant-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.banner-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.banner-description {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.banner-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.banner-link-btn:hover {
+  color: var(--primary2);
+}
+
+.banner-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  z-index: 2;
+}
+
+.banner-nav-btn:hover {
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.banner-nav-prev {
+  left: 8px;
+}
+
+.banner-nav-next {
+  right: 8px;
+}
+
+.banner-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 0 14px;
+}
+
+.banner-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: none;
+  background: var(--border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.banner-dot.active {
+  background: var(--primary);
+  width: 20px;
+  border-radius: 999px;
+}
+
+@media (max-width: 768px) {
+  .review-comment-item {
+    padding: 10px;
+  }
+
+  .review-comment-replies {
+    padding-left: 12px;
+  }
+
+  .banner-carousel-wrapper {
+    display: none;
+  }
 }

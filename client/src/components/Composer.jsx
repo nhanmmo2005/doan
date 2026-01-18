@@ -157,7 +157,7 @@ export default function Composer({ restaurants, onSubmit, loading }) {
 
   const helper = useMemo(() => {
     const count = files.length;
-    if (!count) return "Tip: Ctrl+V để dán ảnh • Chọn nhiều ảnh/video như Facebook";
+    if (!count) return "";
     return `Đã chọn ${count}/${MAX_FILES} file`;
   }, [files.length]);
 

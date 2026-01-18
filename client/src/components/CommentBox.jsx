@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { uploadMedia } from "../api/upload";
 import { createComment, deleteComment, fetchComments, updateComment } from "../api/comments";
 import { getUser } from "../auth";
+import Lightbox from "./Lightbox";
 
 const MAX_FILES = 8;
 
@@ -35,23 +36,45 @@ function buildTree(flat) {
 }
 
 function MediaThumbs({ media }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
   if (!media?.length) return null;
 
   return (
-    <div className="cmt-media">
-      {media.map((m, idx) => (
-        <a
-          key={idx}
-          className="cmt-media-item"
-          href={m.url}
-          target="_blank"
-          rel="noreferrer"
-          title="Mở media"
-        >
-          {m.mediaType === "image" ? <img src={m.url} alt="" /> : <div className="cmt-videoTag">VIDEO</div>}
-        </a>
-      ))}
-    </div>
+    <>
+      <div className="cmt-media">
+        {media.map((m, idx) => (
+          <div
+            key={idx}
+            className="cmt-media-item"
+            onClick={() => {
+              setLightboxIndex(idx);
+              setLightboxOpen(true);
+            }}
+            style={{ cursor: "pointer" }}
+            title="Xem media"
+          >
+            {m.mediaType === "image" ? (
+              <img src={m.url} alt="" />
+            ) : (
+              <div className="cmt-videoTag">VIDEO</div>
+            )}
+          </div>
+        ))}
+      </div>
+      <Lightbox
+        open={lightboxOpen}
+        items={media.map((m) => ({
+          url: m.url,
+          mediaType: m.mediaType,
+        }))}
+        index={lightboxIndex}
+        onClose={() => setLightboxOpen(false)}
+        onPrev={() => setLightboxIndex((prev) => (prev > 0 ? prev - 1 : media.length - 1))}
+        onNext={() => setLightboxIndex((prev) => (prev < media.length - 1 ? prev + 1 : 0))}
+      />
+    </>
   );
 }
 
@@ -313,7 +336,7 @@ export default function CommentBox({ postId, inputRef }) {
             value={text}
             onChange={(e) => setText(e.target.value)}
             onPaste={onPaste}
-            placeholder="Viết bình luận… (có thể Ctrl+V dán ảnh)"
+            placeholder="Viết bình luận…"
           />
 
           <div className="cmt-composeTools">
