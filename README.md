@@ -107,6 +107,9 @@ server {
 ### 4. Environment Variables
 Tạo file `.env` trong thư mục server với thông tin database production.
 
+### 5. Deploy lên Cloud
+Xem hướng dẫn chi tiết trong file `DEPLOYMENT.md` để deploy lên Vercel (frontend) và Render (backend).
+
 ## Lưu ý
 - Client sử dụng `VITE_API_URL` từ file `.env` để kết nối đến API
 - Đảm bảo CORS được cấu hình đúng trong production
