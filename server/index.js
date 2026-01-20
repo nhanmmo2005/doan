@@ -31,6 +31,16 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+// Simple request logger for debugging (will log OPTIONS/POST/GET)
+app.use((req, res, next) => {
+  try {
+    console.log(
+      `[REQ] ${new Date().toISOString()} ${req.method} ${req.originalUrl} from ${req.ip} origin=${req.headers.origin}`
+    );
+  } catch (e) {}
+  next();
+});
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
