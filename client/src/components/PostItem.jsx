@@ -13,6 +13,7 @@ import {
   FaEdit,
   FaTrash,
 } from "react-icons/fa";
+import Button from "./ui/Button";
 
 function fmtTime(ts) {
   try {
@@ -163,12 +164,12 @@ export default function PostItem({ post, onLike, onChanged, children, autoOpenCo
         <div className="post-edit">
           <textarea value={draft} onChange={(e) => setDraft(e.target.value)} />
           <div className="post-editActions">
-            <button type="button" className="chip" onClick={() => setEditing(false)}>
+            <Button type="button" className="chip" variant="secondary" size="sm" onClick={() => setEditing(false)}>
               Huỷ
-            </button>
-            <button type="button" className="primary" onClick={handleSave}>
+            </Button>
+            <Button type="button" variant="primary" size="sm" onClick={handleSave}>
               Lưu
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -184,29 +185,28 @@ export default function PostItem({ post, onLike, onChanged, children, autoOpenCo
 
       {/* actions: Like -> Comment -> Share */}
       <div className="post-actions">
-        <button
+        <Button
           type="button"
           className={`act act-like ${isLiked ? "act-liked" : ""}`}
+          size="sm"
           onClick={() => {
             setIsLiked(!isLiked);
             onLike?.(post.id);
           }}
         >
-          <span className="act-icon">
-            {isLiked ? <FaHeart /> : <FaRegHeart />}
-          </span>
+          <span className="act-icon">{isLiked ? <FaHeart /> : <FaRegHeart />}</span>
           <span className="act-text">{isLiked ? "Đã thích" : "Thích"}</span>
-        </button>
+        </Button>
 
-        <button type="button" className="act act-comment" onClick={toggleComment}>
+        <Button type="button" className="act act-comment" size="sm" onClick={toggleComment}>
           <span className="act-icon"><FaComment /></span>
           <span className="act-text">Bình luận</span>
-        </button>
+        </Button>
 
-        <button type="button" className="act act-share" onClick={copyShare}>
+        <Button type="button" className="act act-share" size="sm" onClick={copyShare}>
           <span className="act-icon"><FaShareAlt /></span>
           <span className="act-text">Chia sẻ {copied ? "✓" : ""}</span>
-        </button>
+        </Button>
       </div>
 
       {/* comments */}

@@ -18,6 +18,7 @@ import {
   FaVideo,
   FaTimes,
 } from "react-icons/fa";
+import Button from "../components/ui/Button";
 
 function ReviewForm({ restaurant, onSubmit }) {
   const [priceRating, setPriceRating] = useState(0);
@@ -323,28 +324,29 @@ function ReviewForm({ restaurant, onSubmit }) {
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
                 )}
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => removeMedia(idx)}
                   style={{
                     position: "absolute",
                     top: 4,
                     right: 4,
-                    background: "rgba(0,0,0,0.6)",
-                    color: "white",
-                    border: "none",
                     borderRadius: "50%",
-                    width: 24,
-                    height: 24,
+                    width: 28,
+                    height: 28,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    cursor: "pointer",
                     fontSize: 12,
+                    background: "rgba(0,0,0,0.6)",
+                    color: "white",
+                    border: "none",
                   }}
                 >
                   <FaTimes />
-                </button>
+                </Button>
               </div>
             ))}
           </div>
@@ -354,14 +356,15 @@ function ReviewForm({ restaurant, onSubmit }) {
           <span style={{ fontSize: 12, color: "var(--muted)" }}>
             {comment.length}/500 ký tự
           </span>
-          <button
-            type="submit"
-            className="primary"
-            disabled={!avgRating || submitting || uploading}
-            style={{ minWidth: 120 }}
-          >
-            {uploading ? "Đang tải..." : submitting ? "Đang gửi..." : "Gửi đánh giá"}
-          </button>
+        <Button
+          type="submit"
+          variant="primary"
+          size="md"
+          disabled={!avgRating || submitting || uploading}
+          style={{ minWidth: 120 }}
+        >
+          {uploading ? "Đang tải..." : submitting ? "Đang gửi..." : "Gửi đánh giá"}
+        </Button>
         </div>
         <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>
           * Đánh giá cần được admin duyệt trước khi hiển thị
@@ -510,23 +513,20 @@ function ReviewItem({ review, onDelete }) {
         </>
       )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
           onClick={() => setShowComments(!showComments)}
-          style={{
-            background: "none",
-            border: "none",
-            color: "var(--primary)",
-            fontSize: 13,
-            cursor: "pointer",
-            padding: 0,
-          }}
+          style={{ background: "transparent", border: "none", color: "var(--primary)", padding: 0 }}
         >
           {review.comment_count || 0} bình luận
-        </button>
+        </Button>
         {canDelete && (
-          <button
+          <Button
             type="button"
+            variant="danger"
+            size="sm"
             className="restaurant-review-delete"
             onClick={() => {
               if (confirm("Xoá đánh giá này?")) {
@@ -536,7 +536,7 @@ function ReviewItem({ review, onDelete }) {
             title="Xoá đánh giá"
           >
             <FaTrash />
-          </button>
+          </Button>
         )}
       </div>
       {showComments && <ReviewCommentBox reviewId={review.id} />}

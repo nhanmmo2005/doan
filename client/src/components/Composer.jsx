@@ -7,6 +7,7 @@ import {
   faUtensils,
   faPaperPlane,
 } from "@fortawesome/free-solid-svg-icons";
+import Button from "./ui/Button";
 
 const MAX_FILES = 10;
 
@@ -26,19 +27,21 @@ function MediaPreview({ previews, onRemove }) {
     <div className="composer-preview">
       {/* Videos: 1 dòng / video */}
       {videos.map((v, idx) => (
-        <div className="preview-video" key={`v-${idx}`}>
+          <div className="preview-video" key={`v-${idx}`}>
           <video controls preload="metadata">
             <source src={v.url} />
           </video>
-          <button
+          <Button
             type="button"
             className="preview-remove"
+            variant="ghost"
+            size="sm"
             onClick={() => onRemove(v.file)}
             aria-label="Bỏ video"
             title="Bỏ"
           >
             ×
-          </button>
+          </Button>
         </div>
       ))}
 
@@ -58,15 +61,17 @@ function MediaPreview({ previews, onRemove }) {
             return (
               <div className="preview-tile" key={`i-${i}`}>
                 <img src={img.url} alt="" />
-                <button
+                <Button
                   type="button"
                   className="preview-remove"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => onRemove(img.file)}
                   aria-label="Bỏ ảnh"
                   title="Bỏ"
                 >
                   ×
-                </button>
+                </Button>
                 {more && <div className="preview-more">+{images.length - 4}</div>}
               </div>
             );
@@ -223,10 +228,10 @@ export default function Composer({ restaurants, onSubmit, loading }) {
             </span>
           </div>
 
-          <button className="btn-primary" disabled={busy}>
+          <Button className="btn-primary" variant="primary" size="md" disabled={busy}>
             <FontAwesomeIcon icon={faPaperPlane} />
             <span style={{ marginLeft: 8 }}>{busy ? "Đang đăng..." : "Đăng"}</span>
-          </button>
+          </Button>
         </div>
 
         {err && (

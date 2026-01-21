@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { http } from "../api/http";
 import { Link } from "react-router-dom";
 import { FaTag, FaCalendarCheck, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import Button from "./ui/Button";
 
 export default function BannerCarousel() {
   const [banners, setBanners] = useState([]);
@@ -131,29 +132,35 @@ export default function BannerCarousel() {
 
         {banners.length > 1 && (
           <>
-            <button
+            <Button
               type="button"
               className="banner-nav-btn banner-nav-prev"
+              variant="ghost"
+              size="sm"
               onClick={goToPrev}
               aria-label="Banner trước"
             >
               <FaChevronLeft />
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className="banner-nav-btn banner-nav-next"
+              variant="ghost"
+              size="sm"
               onClick={goToNext}
               aria-label="Banner sau"
             >
               <FaChevronRight />
-            </button>
+            </Button>
 
             <div className="banner-dots">
               {banners.map((_, idx) => (
-                <button
+                <Button
                   key={idx}
                   type="button"
                   className={`banner-dot ${idx === currentIndex ? "active" : ""}`}
+                  variant="ghost"
+                  size="sm"
                   onClick={() => goToSlide(idx)}
                   aria-label={`Banner ${idx + 1}`}
                 />

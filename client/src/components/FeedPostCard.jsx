@@ -53,6 +53,7 @@ function MediaGrid({ media, onOpen }) {
                   overflow: "hidden",
                   border: "1px solid rgba(0,0,0,0.08)",
                   background: "#fff",
+                  display: "block",
                 }}
               >
                 <img src={img.url} alt="" style={{ width: "100%", display: "block" }} />

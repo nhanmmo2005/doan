@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AppLayout from "../../components/AppLayout";
 import { http } from "../../api/http";
+import Button from "../../components/ui/Button";
 import {
   FaUsers,
   FaNewspaper,
@@ -483,13 +484,15 @@ export default function AdminPage() {
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
-              <button
+              <Button
                 key={tab.id}
                 className={`admin-tab ${activeTab === tab.id ? "active" : ""}`}
+                variant="ghost"
+                size="sm"
                 onClick={() => setActiveTab(tab.id)}
               >
                 <Icon /> {tab.label}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -575,9 +578,7 @@ export default function AdminPage() {
         {activeTab === "posts" && (
           <div className="admin-content">
             <div className="admin-actions">
-              <button className="btn-primary" onClick={loadPosts}>
-                ↻ Tải lại
-              </button>
+              <Button variant="primary" size="md" onClick={loadPosts}>↻ Tải lại</Button>
             </div>
             {loading ? (
               <div>Đang tải...</div>
@@ -604,29 +605,24 @@ export default function AdminPage() {
                       <div className="admin-actions-group">
                         {post.status === "pending" && (
                           <>
-                            <button onClick={() => updatePostStatus(post.id, "approved")} className="btn-success">
-                              <FaCheck /> Duyệt
-                            </button>
-                            <button onClick={() => updatePostStatus(post.id, "rejected")} className="btn-danger">
-                              <FaTimes /> Từ chối
-                            </button>
+                            <Button onClick={() => updatePostStatus(post.id, "approved")} variant="success" size="sm"><FaCheck /> Duyệt</Button>
+                            <Button onClick={() => updatePostStatus(post.id, "rejected")} variant="danger" size="sm"><FaTimes /> Từ chối</Button>
                           </>
                         )}
-                        <button
+                        <Button
                           onClick={() =>
                             updatePostVisibility(
                               post.id,
                               post.visibility === "public" ? "hidden" : "public"
                             )
                           }
-                          className="btn-secondary"
+                          variant="secondary"
+                          size="sm"
                         >
                           {post.visibility === "public" ? <FaEyeSlash /> : <FaEye />}{" "}
                           {post.visibility === "public" ? "Ẩn" : "Hiện"}
-                        </button>
-                        <button onClick={() => deletePost(post.id)} className="btn-danger">
-                          <FaTrash /> Xóa
-                        </button>
+                        </Button>
+                        <Button onClick={() => deletePost(post.id)} variant="danger" size="sm"><FaTrash /> Xóa</Button>
                       </div>
                     </div>
                   </div>
@@ -640,9 +636,7 @@ export default function AdminPage() {
         {activeTab === "users" && (
           <div className="admin-content">
             <div className="admin-actions">
-              <button className="btn-primary" onClick={loadUsers}>
-                ↻ Tải lại
-              </button>
+              <Button variant="primary" size="md" onClick={loadUsers}>↻ Tải lại</Button>
             </div>
             {loading ? (
               <div>Đang tải...</div>
@@ -668,25 +662,22 @@ export default function AdminPage() {
                         ID: {user.id} • {new Date(user.created_at).toLocaleString()}
                       </span>
                       <div className="admin-actions-group">
-                        <button
-                          onClick={() => toggleUserLock(user.id, user.locked)}
-                          className={user.locked ? "btn-success" : "btn-warning"}
-                        >
+                        <Button onClick={() => toggleUserLock(user.id, user.locked)} variant={user.locked ? "success" : "warning"} size="sm">
                           {user.locked ? <FaUnlock /> : <FaLock />}{" "}
                           {user.locked ? "Mở khóa" : "Khóa"}
-                        </button>
+                        </Button>
                         {user.role === "user" ? (
-                          <button onClick={() => changeUserRole(user.id, "admin")} className="btn-primary">
+                          <Button onClick={() => changeUserRole(user.id, "admin")} variant="primary" size="sm">
                             Thăng admin
-                          </button>
+                          </Button>
                         ) : (
-                          <button onClick={() => changeUserRole(user.id, "user")} className="btn-secondary">
+                          <Button onClick={() => changeUserRole(user.id, "user")} variant="secondary" size="sm">
                             Hạ quyền
-                          </button>
+                          </Button>
                         )}
-                        <button onClick={() => deleteUser(user.id)} className="btn-danger">
+                        <Button onClick={() => deleteUser(user.id)} variant="danger" size="sm">
                           <FaTrash /> Xóa
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -700,9 +691,7 @@ export default function AdminPage() {
         {activeTab === "reviews" && (
           <div className="admin-content">
             <div className="admin-actions">
-              <button className="btn-primary" onClick={loadReviews}>
-                ↻ Tải lại
-              </button>
+              <Button variant="primary" size="md" onClick={loadReviews}>↻ Tải lại</Button>
             </div>
             {loading ? (
               <div>Đang tải...</div>
@@ -756,17 +745,11 @@ export default function AdminPage() {
                       <div className="admin-actions-group">
                         {review.status === "pending" && (
                           <>
-                            <button onClick={() => updateReviewStatus(review.id, "approved")} className="btn-success">
-                              <FaCheck /> Duyệt
-                            </button>
-                            <button onClick={() => updateReviewStatus(review.id, "rejected")} className="btn-danger">
-                              <FaTimes /> Từ chối
-                            </button>
+                            <Button onClick={() => updateReviewStatus(review.id, "approved")} variant="success" size="sm"><FaCheck /> Duyệt</Button>
+                            <Button onClick={() => updateReviewStatus(review.id, "rejected")} variant="danger" size="sm"><FaTimes /> Từ chối</Button>
                           </>
                         )}
-                        <button onClick={() => deleteReview(review.id)} className="btn-danger">
-                          <FaTrash /> Xóa
-                        </button>
+                        <Button onClick={() => deleteReview(review.id)} variant="danger" size="sm"><FaTrash /> Xóa</Button>
                       </div>
                     </div>
                   </div>
@@ -780,12 +763,8 @@ export default function AdminPage() {
         {activeTab === "restaurants" && (
           <div className="admin-content">
             <div className="admin-actions">
-              <button className="btn-primary" onClick={() => openRestaurantForm()}>
-                <FaPlus /> Thêm quán ăn
-              </button>
-              <button className="btn-secondary" onClick={loadRestaurants}>
-                ↻ Tải lại
-              </button>
+              <Button variant="primary" size="md" onClick={() => openRestaurantForm()}><FaPlus /> Thêm quán ăn</Button>
+              <Button variant="secondary" size="md" onClick={loadRestaurants}>↻ Tải lại</Button>
             </div>
             {loading ? (
               <div>Đang tải...</div>
@@ -809,18 +788,15 @@ export default function AdminPage() {
                         ID: {restaurant.id} • {new Date(restaurant.created_at).toLocaleString()}
                       </span>
                       <div className="admin-actions-group">
-                        <button onClick={() => openRestaurantForm(restaurant)} className="btn-secondary">
-                          <FaEdit /> Sửa
-                        </button>
-                        <button
+                        <Button onClick={() => openRestaurantForm(restaurant)} variant="secondary" size="sm"><FaEdit /> Sửa</Button>
+                        <Button
                           onClick={() => toggleFeatured(restaurant.id, restaurant.is_featured)}
-                          className={restaurant.is_featured ? "btn-secondary" : "btn-primary"}
+                          variant={restaurant.is_featured ? "secondary" : "primary"}
+                          size="sm"
                         >
                           <FaStar /> {restaurant.is_featured ? "Bỏ nổi bật" : "Nổi bật"}
-                        </button>
-                        <button onClick={() => deleteRestaurant(restaurant.id)} className="btn-danger">
-                          <FaTrash /> Xóa
-                        </button>
+                        </Button>
+                        <Button onClick={() => deleteRestaurant(restaurant.id)} variant="danger" size="sm"><FaTrash /> Xóa</Button>
                       </div>
                     </div>
                   </div>
@@ -840,9 +816,9 @@ export default function AdminPage() {
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                 <h2>{editingRestaurant ? "Sửa quán ăn" : "Thêm quán ăn mới"}</h2>
-                <button onClick={() => setShowRestaurantForm(false)} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer" }}>
+                <Button variant="ghost" size="sm" onClick={() => setShowRestaurantForm(false)} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer" }}>
                   ×
-                </button>
+                </Button>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -975,12 +951,12 @@ export default function AdminPage() {
                 </div>
 
                 <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
-                  <button onClick={() => setShowRestaurantForm(false)} className="btn-secondary">
+                  <Button onClick={() => setShowRestaurantForm(false)} variant="secondary" size="sm">
                     Hủy
-                  </button>
-                  <button onClick={saveRestaurant} className="btn-primary">
+                  </Button>
+                  <Button onClick={saveRestaurant} variant="primary" size="md">
                     {editingRestaurant ? "Cập nhật" : "Thêm mới"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -990,12 +966,8 @@ export default function AdminPage() {
         {activeTab === "banners" && (
           <div className="admin-content">
             <div className="admin-actions">
-              <button className="btn-primary" onClick={() => openBannerForm()}>
-                <FaPlus /> Thêm banner mới
-              </button>
-              <button className="btn-secondary" onClick={loadBanners}>
-                ↻ Tải lại
-              </button>
+              <Button variant="primary" size="md" onClick={() => openBannerForm()}><FaPlus /> Thêm banner mới</Button>
+              <Button variant="secondary" size="md" onClick={loadBanners}>↻ Tải lại</Button>
             </div>
             {loading ? (
               <div>Đang tải...</div>
@@ -1031,18 +1003,15 @@ export default function AdminPage() {
                     <div className="admin-item-footer">
                       <span>ID: {banner.id} • Thứ tự: {banner.sort_order}</span>
                       <div className="admin-actions-group">
-                        <button onClick={() => openBannerForm(banner)} className="btn-secondary">
-                          <FaEdit /> Sửa
-                        </button>
-                        <button
+                        <Button onClick={() => openBannerForm(banner)} variant="secondary" size="sm"><FaEdit /> Sửa</Button>
+                        <Button
                           onClick={() => toggleBannerActive(banner.id, banner.is_active)}
-                          className={banner.is_active ? "btn-secondary" : "btn-primary"}
+                          variant={banner.is_active ? "secondary" : "primary"}
+                          size="sm"
                         >
                           {banner.is_active ? <FaEyeSlash /> : <FaEye />} {banner.is_active ? "Ẩn" : "Hiện"}
-                        </button>
-                        <button onClick={() => deleteBanner(banner.id)} className="btn-danger">
-                          <FaTrash /> Xóa
-                        </button>
+                        </Button>
+                        <Button onClick={() => deleteBanner(banner.id)} variant="danger" size="sm"><FaTrash /> Xóa</Button>
                       </div>
                     </div>
                   </div>
@@ -1186,12 +1155,8 @@ export default function AdminPage() {
                 </div>
 
                 <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
-                  <button onClick={() => setShowBannerForm(false)} className="btn-secondary">
-                    Hủy
-                  </button>
-                  <button onClick={saveBanner} className="btn-primary">
-                    {editingBanner ? "Cập nhật" : "Thêm mới"}
-                  </button>
+                  <Button onClick={() => setShowBannerForm(false)} variant="secondary" size="sm">Hủy</Button>
+                  <Button onClick={saveBanner} variant="primary" size="md">{editingBanner ? "Cập nhật" : "Thêm mới"}</Button>
                 </div>
               </div>
             </div>
@@ -1201,9 +1166,7 @@ export default function AdminPage() {
         {activeTab === "eating-plans" && (
           <div className="admin-content">
             <div className="admin-actions">
-              <button className="btn-primary" onClick={loadEatingPlans}>
-                ↻ Tải lại
-              </button>
+              <Button variant="primary" size="md" onClick={loadEatingPlans}>↻ Tải lại</Button>
             </div>
             {loading ? (
               <div>Đang tải...</div>
@@ -1229,9 +1192,7 @@ export default function AdminPage() {
                         ID: {plan.id} • {new Date(plan.planned_at).toLocaleString()}
                       </span>
                       <div className="admin-actions-group">
-                        <button onClick={() => deleteEatingPlan(plan.id)} className="btn-danger">
-                          <FaTrash /> Xóa
-                        </button>
+                        <Button onClick={() => deleteEatingPlan(plan.id)} variant="danger" size="sm"><FaTrash /> Xóa</Button>
                       </div>
                     </div>
                   </div>
@@ -1245,9 +1206,7 @@ export default function AdminPage() {
         {activeTab === "chat" && (
           <div className="admin-content">
             <div className="admin-actions">
-              <button className="btn-primary" onClick={loadChatRooms}>
-                ↻ Tải lại
-              </button>
+              <Button variant="primary" size="md" onClick={loadChatRooms}>↻ Tải lại</Button>
             </div>
             {loading ? (
               <div>Đang tải...</div>
@@ -1272,9 +1231,7 @@ export default function AdminPage() {
                         ID: {room.id} • {new Date(room.created_at).toLocaleString()}
                       </span>
                       <div className="admin-actions-group">
-                        <button onClick={() => deleteChatRoom(room.id)} className="btn-danger">
-                          <FaTrash /> Xóa
-                        </button>
+                        <Button onClick={() => deleteChatRoom(room.id)} variant="danger" size="sm"><FaTrash /> Xóa</Button>
                       </div>
                     </div>
                   </div>

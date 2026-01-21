@@ -1,3 +1,5 @@
+import Button from "./ui/Button";
+
 export default function Lightbox({ open, items = [], index = 0, onClose, onPrev, onNext }) {
   if (!open || !items.length) return null;
 
@@ -13,7 +15,7 @@ export default function Lightbox({ open, items = [], index = 0, onClose, onPrev,
   return (
     <div className="lb-backdrop" onKeyDown={onKeyDown} tabIndex={-1}>
       <div className="lb-modal">
-        <button className="lb-close" onClick={onClose} aria-label="Close">✕</button>
+        <Button className="lb-close" variant="ghost" size="sm" onClick={onClose} aria-label="Close">✕</Button>
 
         <div className="lb-body">
           {isVideo ? (
@@ -27,9 +29,9 @@ export default function Lightbox({ open, items = [], index = 0, onClose, onPrev,
 
         {items.length > 1 && (
           <div className="lb-nav">
-            <button className="lb-btn" onClick={onPrev}>←</button>
+            <Button className="lb-btn lb-prev" variant="ghost" size="sm" onClick={onPrev}>←</Button>
             <div className="lb-count">{index + 1}/{items.length}</div>
-            <button className="lb-btn" onClick={onNext}>→</button>
+            <Button className="lb-btn lb-next" variant="ghost" size="sm" onClick={onNext}>→</Button>
           </div>
         )}
       </div>

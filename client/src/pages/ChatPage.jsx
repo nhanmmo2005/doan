@@ -14,6 +14,7 @@ import {
   FaPlus,
   FaEllipsisV,
 } from "react-icons/fa";
+import Button from "../components/ui/Button";
 
 function fmtTime(ts) {
   try {
@@ -111,14 +112,16 @@ function ChatMessage({ message, onDelete, canDelete, onImageClick }) {
         </div>
 
         {canDelete && (
-          <button
+          <Button
             type="button"
             className="chat-message-delete"
+            variant="danger"
+            size="sm"
             onClick={() => onDelete(message.id)}
             title="Xoá tin nhắn"
           >
             <FaTrash />
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -294,16 +297,18 @@ function ChatWindow({ roomId, onRoomChange }) {
           {mediaPreview && (
             <div className="chat-media-preview">
               <img src={mediaPreview} alt="Preview" />
-              <button
+              <Button
                 type="button"
                 className="chat-media-remove"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   setMediaFile(null);
                   setMediaPreview(null);
                 }}
               >
                 ×
-              </button>
+              </Button>
             </div>
           )}
 
@@ -315,14 +320,16 @@ function ChatWindow({ roomId, onRoomChange }) {
               onChange={handleFileChange}
               style={{ display: "none" }}
             />
-            <button
+            <Button
               type="button"
               className="chat-attach-btn"
+              variant="ghost"
+              size="sm"
               onClick={() => fileInputRef.current?.click()}
               title="Gửi ảnh/video"
             >
               <FaImage />
-            </button>
+            </Button>
 
             <input
               type="text"
@@ -338,14 +345,16 @@ function ChatWindow({ roomId, onRoomChange }) {
               }}
             />
 
-            <button
+            <Button
               type="submit"
               className="chat-send-btn"
+              variant="primary"
+              size="sm"
               disabled={sending || (!text.trim() && !mediaFile)}
               title="Gửi (Enter)"
             >
               <FaPaperPlane />
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -414,14 +423,16 @@ export default function ChatPage() {
               Chat cộng đồng
             </h2>
             {(me.role === "admin" || true) && ( // Allow all users to create rooms for now
-              <button
+              <Button
                 type="button"
                 className="chat-create-btn"
+                variant="primary"
+                size="sm"
                 onClick={() => setShowCreateRoom(!showCreateRoom)}
                 title="Tạo phòng chat mới"
               >
                 <FaPlus />
-              </button>
+              </Button>
             )}
           </div>
 
@@ -505,18 +516,19 @@ function CreateRoomForm({ onSubmit, onCancel }) {
         maxLength={500}
       />
       <div style={{ display: "flex", gap: 8 }}>
-        <button type="button" className="chip" onClick={onCancel} style={{ flex: 1 }}>
+        <Button type="button" className="chip" variant="secondary" size="sm" onClick={onCancel} style={{ flex: 1 }}>
           Huỷ
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
-          className="primary"
+          variant="primary"
+          size="md"
           onClick={handleSubmit}
           disabled={loading}
           style={{ flex: 1 }}
         >
           {loading ? "Đang tạo..." : "Tạo"}
-        </button>
+        </Button>
       </div>
     </div>
   );

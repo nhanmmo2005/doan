@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { http } from "../api/http";
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
 
 
 
@@ -38,28 +40,21 @@ export default function LoginPage() {
       <form onSubmit={onSubmit}>
         <div>
           <label>Email</label>
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{ width: "100%" }}
-          />
+          <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="example@domain.com" />
         </div>
 
         <div style={{ marginTop: 12 }}>
           <label>Mật khẩu</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ width: "100%" }}
-          />
+          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
 
         {err && <p style={{ color: "red", marginTop: 12 }}>{err}</p>}
 
-        <button disabled={loading} style={{ marginTop: 16, width: "100%" }}>
-          {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-        </button>
+        <div style={{ marginTop: 16 }}>
+          <Button type="submit" variant="primary" size="md" className="btn-block" disabled={loading}>
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          </Button>
+        </div>
       </form>
 
       <p style={{ marginTop: 12 }}>

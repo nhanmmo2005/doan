@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { http } from "../api/http"; // nếu file nằm trong src/pages/RegisterPage.jsx
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
 
 export default function RegisterPage() {
   const nav = useNavigate();
@@ -38,50 +40,31 @@ export default function RegisterPage() {
       <form onSubmit={onSubmit}>
         <div>
           <label>Họ tên</label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            style={{ width: "100%" }}
-            placeholder="Nguyễn Văn A"
-          />
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nguyễn Văn A" />
         </div>
 
         <div style={{ marginTop: 12 }}>
           <label>Email</label>
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{ width: "100%" }}
-            placeholder="abc@gmail.com"
-          />
+          <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="abc@gmail.com" />
         </div>
 
         <div style={{ marginTop: 12 }}>
           <label>Mật khẩu</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ width: "100%" }}
-            placeholder="tối thiểu 6 ký tự"
-          />
+          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="tối thiểu 6 ký tự" />
         </div>
 
         <div style={{ marginTop: 12 }}>
           <label>Nhập lại mật khẩu</label>
-          <input
-            type="password"
-            value={password2}
-            onChange={(e) => setPassword2(e.target.value)}
-            style={{ width: "100%" }}
-          />
+          <Input type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} />
         </div>
 
         {err && <p style={{ color: "red", marginTop: 12 }}>{err}</p>}
 
-        <button disabled={loading} style={{ marginTop: 16, width: "100%" }}>
-          {loading ? "Đang đăng ký..." : "Tạo tài khoản"}
-        </button>
+        <div style={{ marginTop: 16 }}>
+          <Button type="submit" variant="primary" size="md" className="btn-block" disabled={loading}>
+            {loading ? "Đang đăng ký..." : "Tạo tài khoản"}
+          </Button>
+        </div>
       </form>
 
       <p style={{ marginTop: 12 }}>

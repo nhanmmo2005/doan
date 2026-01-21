@@ -5,6 +5,8 @@ import AppLayout from "../components/AppLayout";
 import { http } from "../api/http";
 import { getUser } from "../auth";
 import FeedPostCard from "../components/FeedPostCard";
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
 import {
   FaUser,
   FaEdit,
@@ -133,12 +135,12 @@ function ProfileHeader({ profile, onChanged }) {
               />
               {err && <div className="err" style={{ marginTop: 8, marginBottom: 8 }}>{err}</div>}
               <div className="profile-edit-actions">
-                <button type="button" className="chip" onClick={() => setEditing(false)}>
+                <Button type="button" variant="secondary" size="sm" onClick={() => setEditing(false)}>
                   Huỷ
-                </button>
-                <button type="button" className="primary" onClick={handleSave} disabled={loading}>
+                </Button>
+                <Button type="button" variant="primary" size="sm" onClick={handleSave} disabled={loading}>
                   {loading ? "Đang lưu..." : "Lưu"}
-                </button>
+                </Button>
               </div>
             </>
           ) : (
@@ -172,14 +174,15 @@ function ProfileHeader({ profile, onChanged }) {
                 )}
               </div>
               {isMe ? (
-                <button type="button" className="primary" onClick={() => setEditing(true)}>
+                <Button type="button" variant="primary" size="md" onClick={() => setEditing(true)}>
                   <FaEdit style={{ marginRight: 6 }} />
                   Chỉnh sửa hồ sơ
-                </button>
+                </Button>
               ) : (
-                <button
+                <Button
                   type="button"
-                  className={profile.is_following ? "chip" : "primary"}
+                  variant={profile.is_following ? "secondary" : "primary"}
+                  size="sm"
                   onClick={handleFollow}
                 >
                   {profile.is_following ? (
@@ -193,7 +196,7 @@ function ProfileHeader({ profile, onChanged }) {
                       Theo dõi
                     </>
                   )}
-                </button>
+                </Button>
               )}
             </>
           )}

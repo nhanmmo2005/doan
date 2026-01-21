@@ -4,6 +4,7 @@ import { uploadMedia } from "../api/upload";
 import { createComment, deleteComment, fetchComments, updateComment } from "../api/comments";
 import { getUser } from "../auth";
 import Lightbox from "./Lightbox";
+import Button from "./ui/Button";
 
 const MAX_FILES = 8;
 
@@ -80,13 +81,15 @@ function MediaThumbs({ media }) {
 
 function ActionBtn({ children, danger, onClick }) {
   return (
-    <button
+    <Button
       type="button"
       className={`cmt-btn ${danger ? "danger" : ""}`}
+      variant={danger ? "danger" : "secondary"}
+      size="sm"
       onClick={onClick}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 

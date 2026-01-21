@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import AppLayout from "../components/AppLayout";
 import FeedPostCard from "../components/FeedPostCard";
 import { http } from "../api/http";
+import Button from "../components/ui/Button";
 
 export default function PostDetailPage() {
   const nav = useNavigate();
@@ -59,9 +60,9 @@ export default function PostDetailPage() {
           className="card"
           style={{ padding: 14, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}
         >
-          <button type="button" className="chip" onClick={() => nav(-1)}>
+          <Button type="button" className="chip" variant="secondary" size="sm" onClick={() => nav(-1)}>
             ← Quay lại
-          </button>
+          </Button>
 
           <div className="pill" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             <span className="muted" style={{ fontSize: 13 }}>Link bài viết</span>
@@ -81,9 +82,9 @@ export default function PostDetailPage() {
             </a>
           </div>
 
-          <button type="button" className="chip" onClick={copyLink}>
+          <Button type="button" className="chip" variant="secondary" size="sm" onClick={copyLink}>
             {copied ? "✓ Copied" : "Copy"}
-          </button>
+          </Button>
         </div>
 
         {loading && <div className="pill">Đang tải...</div>}

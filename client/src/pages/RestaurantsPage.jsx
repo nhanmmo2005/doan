@@ -20,6 +20,7 @@ import {
   FaHeart,
   FaShoppingBag,
 } from "react-icons/fa";
+import Button from "../components/ui/Button";
 
 // Rating Component for inline rating
 function RestaurantRating({ restaurant, onRate }) {
@@ -338,15 +339,17 @@ export default function RestaurantsPage() {
                   <FaLocationArrow /> {addressLoading ? "Đang lấy địa chỉ..." : (locationAddress || "Vị trí hiện tại")}
                 </span>
               )}
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 className="chip"
                 onClick={() => setShowFilters(!showFilters)}
                 style={{ display: "flex", alignItems: "center", gap: 6 }}
               >
                 <FaFilter />
                 Lọc
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -361,14 +364,16 @@ export default function RestaurantsPage() {
                 className="restaurant-search-input"
               />
               {q && (
-                <button
+                <Button
                   type="button"
                   className="restaurant-search-clear"
+                  size="sm"
+                  variant="secondary"
                   onClick={() => setQ("")}
                   title="Xóa tìm kiếm"
                 >
                   <FaTimes />
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -392,15 +397,16 @@ export default function RestaurantsPage() {
             {mealTimeOptions.map((opt) => {
               const Icon = opt.icon;
               return (
-                <button
+                <Button
                   key={opt.value}
                   type="button"
                   className={mealTime === opt.value ? "tab active" : "tab"}
                   onClick={() => setMealTime(mealTime === opt.value ? "" : opt.value)}
-                  style={{ display: "flex", alignItems: "center", gap: 6 }}
+                  variant={mealTime === opt.value ? "primary" : "secondary"}
+                  size="sm"
                 >
                   <Icon /> {opt.label}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -468,14 +474,9 @@ export default function RestaurantsPage() {
 
               {hasFilters && (
                 <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
-                  <button
-                    type="button"
-                    className="chip"
-                    onClick={clearFilters}
-                    style={{ fontSize: 13 }}
-                  >
+                  <Button type="button" className="chip" size="sm" variant="secondary" onClick={clearFilters} style={{ fontSize: 13 }}>
                     Xóa bộ lọc
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { http } from "../api/http";
 import { getUser } from "../auth";
 import { FaTrash } from "react-icons/fa";
+import Button from "./ui/Button";
 
 function fmtTime(ts) {
   try {
@@ -51,14 +52,14 @@ function CommentNode({ node, onReply, onDelete, canManage }) {
           </div>
 
           <div className="cmt-rowActions">
-            <button type="button" className="cmt-btn" onClick={() => onReply(node)}>
+            <Button type="button" className="cmt-btn" variant="secondary" size="sm" onClick={() => onReply(node)}>
               Trả lời
-            </button>
+            </Button>
             {canManage && (
-              <button type="button" className="cmt-btn danger" onClick={() => onDelete(node.id)}>
+              <Button type="button" className="cmt-btn danger" variant="danger" size="sm" onClick={() => onDelete(node.id)}>
                 <FaTrash style={{ marginRight: 4 }} />
                 Xoá
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -192,11 +193,11 @@ export default function EatingPlanCommentBox({ planId, inputRef }) {
               placeholder="Viết bình luận…"
             />
 
-            <div className="cmt-composeTools">
-              <button className="primary" disabled={loading}>
-                {loading ? "Đang gửi…" : "Gửi"}
-              </button>
-            </div>
+          <div className="cmt-composeTools">
+            <Button className="primary" variant="primary" size="md" disabled={loading}>
+              {loading ? "Đang gửi…" : "Gửi"}
+            </Button>
+          </div>
           </div>
         </form>
       )}

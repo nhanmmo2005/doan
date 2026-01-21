@@ -162,6 +162,25 @@ textarea{
   resize: vertical;
 }
 
+/* UI input helpers */
+.ui-input{
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  outline: none;
+  width: 100%;
+  font: inherit;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.ui-input:focus{
+  border-color: var(--primary);
+  box-shadow: 0 0 0 6px var(--ring);
+}
+.ui-input--error{
+  border-color: rgba(220,38,38,0.8);
+}
+
 /* ====== Topbar ====== */
 .topbar{
   position: sticky;
@@ -436,6 +455,149 @@ body{ background: var(--bg); color: var(--text); }
   font-weight: 700;
   cursor: pointer;
 }
+
+/* Ensure variant buttons share base layout/typography for consistency */
+.btn-primary, .btn-secondary, .btn-success, .btn-danger, .btn-warning, .btn-chip, .btn-mini, .btn-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.2;
+}
+.btn-primary svg, .btn-secondary svg, .btn-success svg, .btn-danger svg, .btn-warning svg, .btn-mini svg, .btn-chip svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Map legacy classes (primary, chip, ghost) to consistent button styles */
+.primary, .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  font-weight: 700;
+  border-radius: 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.primary:disabled, .btn-primary:disabled { opacity: .65; cursor: not-allowed; }
+
+.chip, .btn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--primary);
+  border: 1px solid rgba(0,0,0,0.06);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ghost {
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Tabs smaller */
+.tab {
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 999px;
+}
+
+/* ===== Responsive adjustments ===== */
+@media (max-width: 900px) {
+  /* Reduce button sizes on medium screens */
+  .btn, .primary, .btn-primary {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  .btn--md { padding: 8px 12px; font-size: 13px; }
+  .btn--lg { padding: 10px 14px; font-size: 14px; }
+  .composer-input textarea { min-height: 80px; }
+}
+
+@media (max-width: 520px) {
+  /* Mobile: compact buttons, stacked actions */
+  .btn, .primary, .btn-primary {
+    padding: 8px 10px;
+    font-size: 13px;
+    border-radius: 10px;
+  }
+  .btn--sm { padding: 6px 8px; font-size: 12px; }
+  .btn-block { width: 100%; display: block; }
+
+  /* Sidebar hidden already; ensure header spacing */
+  .topbar-inner { padding: 8px 12px; }
+  .search { max-width: 260px; }
+
+  /* Keo-an / action groups: stack buttons */
+  .keo-an-actions { display: flex; flex-direction: column; gap: 8px; }
+  .keo-an-actions .btn { width: 100%; justify-content: center; }
+  .admin-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* Profile header actions stack */
+  .profile-edit-actions { display: flex; gap: 8px; flex-direction: column; }
+  .profile-edit-actions .btn { width: 100%; }
+
+  /* Post action buttons become icons+small text */
+  .post-actions .act { padding: 6px 8px; font-size: 13px; }
+}
+
+/* ===== Button base & icon sizing (standardized) ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 14px;
+  line-height: 1.2;
+  transition: all 0.12s ease;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid transparent;
+}
+.btn--sm { padding: 6px 10px; font-size: 13px; border-radius: 10px; }
+.btn--md { padding: 10px 16px; font-size: 14px; border-radius: 12px; }
+.btn--lg { padding: 12px 20px; font-size: 15px; border-radius: 14px; }
+.btn-block { display: block; width: 100%; }
+
+/* Ensure any SVG/icon inside buttons is consistent */
+.btn svg,
+.btn .icon svg,
+.btn .fa-icon,
+.btn .react-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* small variant used in lists */
+.btn-mini {
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 10px;
+}
+.btn-mini svg { width: 14px; height: 14px; }
 
 .pill{
   display: inline-flex;

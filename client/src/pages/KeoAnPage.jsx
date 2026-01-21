@@ -17,6 +17,7 @@ import {
   FaMoneyBillWave,
   FaTimes,
 } from "react-icons/fa";
+import Button from "../components/ui/Button";
 
 function fmtDateTime(dt) {
   try {
@@ -184,19 +185,19 @@ function KeoAnCard({ plan, onChanged }) {
         )}
       </div>
 
-      {me && (
+          {me && (
         <div className="keo-an-actions">
           {canJoin && (
-            <button type="button" className="primary" onClick={handleJoin}>
+            <Button type="button" variant="primary" size="sm" onClick={handleJoin}>
               <FaCheckCircle style={{ marginRight: 6 }} />
               Tham gia
-            </button>
+            </Button>
           )}
           {canLeave && (
-            <button type="button" className="chip" onClick={handleLeave}>
+            <Button type="button" variant="secondary" size="sm" onClick={handleLeave}>
               <FaTimesCircle style={{ marginRight: 6 }} />
               Rời kèo
-            </button>
+            </Button>
           )}
           {isJoined && !isCreator && (
             <span className="keo-an-joined-badge">
@@ -204,15 +205,16 @@ function KeoAnCard({ plan, onChanged }) {
               Đã tham gia
             </span>
           )}
-          <button
+          <Button
             type="button"
-            className="chip"
+            variant="secondary"
+            size="sm"
             onClick={() => setShowComments(!showComments)}
             style={{ marginLeft: "auto" }}
           >
             <FaComments style={{ marginRight: 6 }} />
             Bình luận {plan.comment_count > 0 ? `(${plan.comment_count})` : ""}
-          </button>
+          </Button>
         </div>
       )}
 

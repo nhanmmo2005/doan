@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { http } from "../api/http";
 import { getUser } from "../auth";
 import { FaTrash, FaReply } from "react-icons/fa";
+import Button from "./ui/Button";
 
 export default function ReviewCommentBox({ reviewId }) {
   const [comments, setComments] = useState([]);
@@ -78,25 +79,29 @@ export default function ReviewCommentBox({ reviewId }) {
             </div>
           </div>
           {canManage && (
-            <button
+            <Button
               type="button"
               className="review-comment-delete"
+              variant="danger"
+              size="sm"
               onClick={() => deleteComment(node.id)}
               title="Xóa"
             >
               <FaTrash />
-            </button>
+            </Button>
           )}
         </div>
         <div className="review-comment-content">{node.content}</div>
         {me && (
-          <button
+          <Button
             type="button"
             className="review-comment-reply-btn"
+            variant="secondary"
+            size="sm"
             onClick={() => setReplyingTo(isReplying ? null : node.id)}
           >
             <FaReply /> Trả lời
-          </button>
+          </Button>
         )}
         {isReplying && (
           <div className="review-comment-reply-form">
@@ -117,26 +122,30 @@ export default function ReviewCommentBox({ reviewId }) {
               }}
             />
             <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   setReplyingTo(null);
                   setReplyContent("");
                 }}
+                variant="secondary"
+                size="sm"
                 className="btn-secondary"
                 style={{ fontSize: 12, padding: "6px 12px" }}
               >
                 Hủy
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => createComment(node.id)}
+                variant="primary"
+                size="sm"
                 className="btn-primary"
                 style={{ fontSize: 12, padding: "6px 12px" }}
                 disabled={!replyContent.trim()}
               >
                 Gửi
-              </button>
+              </Button>
             </div>
           </div>
         )}
