@@ -11,7 +11,7 @@
    cd ../server && npm install
    ```
 
-3. Cấu hình environment variables:
+3. Cấu hình database:
    - Import file `server/db/nhanmmo.sql` vào MySQL
    - Tạo file `.env` trong thư mục server:
 
@@ -23,14 +23,6 @@
    JWT_SECRET=your_random_jwt_secret
    PORT=5000
    ```
-
-   - Tạo file `.env` trong thư mục client:
-
-   ```env
-   VITE_API_URL=http://localhost:5000
-   ```
-
-   Xem file `env-example.txt` để có template đầy đủ.
 
 ## Chạy development
 
@@ -44,15 +36,7 @@ cd client && npm run dev
 
 ## Deploy lên production
 
-### 1. Cấu hình production environment
-
-Tạo file `.env` trong thư mục client với URL của API server:
-
-```env
-VITE_API_URL=https://your-api-domain.com
-```
-
-### 2. Build client
+### 1. Build client
 ```bash
 cd client && npm run build
 ```
@@ -107,11 +91,7 @@ server {
 ### 4. Environment Variables
 Tạo file `.env` trong thư mục server với thông tin database production.
 
-### 5. Deploy lên Cloud
-Xem hướng dẫn chi tiết trong file `DEPLOYMENT.md` để deploy lên Vercel (frontend) và Render (backend).
-
 ## Lưu ý
-- Client sử dụng `VITE_API_URL` từ file `.env` để kết nối đến API
+- Client tự động detect environment: localhost cho dev, `/api` cho production
 - Đảm bảo CORS được cấu hình đúng trong production
 - Database cần được backup thường xuyên
-- Khi deploy riêng biệt client và server, cần cấu hình VITE_API_URL trỏ đến domain của server

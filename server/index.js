@@ -20,33 +20,31 @@ console.log("ENV CHECK:", {
 
 const app = express();
 
-// CORS configuration
+// CORS configuration: allow credentials and only allow known origins in production.
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "").split(",").map(s => s.trim()).filter(Boolean);
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production'
-    ? process.env.ALLOWED_ORIGINS?.split(',') || false
-    : true, // Allow all in development
+  origin: function (origin, callback) {
+    // allow requests with no origin like mobile apps or curl
+    if (!origin) return callback(null, true);
+    // during development allow localhost origins
+    if (process.env.NODE_ENV !== "production") return callback(null, true);
+    if (allowedOrigins.length === 0) return callback(null, false);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Not allowed by CORS"));
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
-
 app.use(cors(corsOptions));
-
-// Simple request logger for debugging (will log OPTIONS/POST/GET)
-app.use((req, res, next) => {
-  try {
-    console.log(
-      `[REQ] ${new Date().toISOString()} ${req.method} ${req.originalUrl} from ${req.ip} origin=${req.headers.origin}`
-    );
-  } catch (e) {}
-  next();
-});
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
 app.get("/", (req, res) => res.json({ ok: true, msg: "Foodbook API running" }));
 
 app.use("/api/auth", require("./routes/auth"));
+// Also accept legacy /auth routes so dev frontends calling /auth/* still work
+app.use("/auth", require("./routes/auth"));
 app.use("/api/posts", require("./routes/posts"));
 app.use("/api/reviews", require("./routes/reviews"));
 app.use("/api/admin", require("./routes/admin"));

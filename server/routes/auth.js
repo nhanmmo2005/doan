@@ -23,8 +23,6 @@ router.post("/register", async (req, res) => {
 });
 
 router.post("/login", async (req, res) => {
-  console.log("[AUTH] /api/auth/login - method:", req.method, "origin:", req.headers.origin);
-  console.log("[AUTH] body:", req.body);
   const { email, password } = req.body;
 
   const [rows] = await pool.query(

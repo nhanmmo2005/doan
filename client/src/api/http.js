@@ -1,9 +1,7 @@
 import axios from "axios";
 
 export const http = axios.create({
-  // Prefer explicit VITE_API_URL. If not provided, use relative `/api`
-  // This avoids accidentally calling localhost from a deployed frontend.
-  baseURL: import.meta.env.VITE_API_URL || "/api",
+  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:5000" : "/api"),
   withCredentials: true, // nếu backend dùng cookie/refreshToken
 });
 
