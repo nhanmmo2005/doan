@@ -1,6 +1,6 @@
 // src/components/PostItem.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import CommentBox from "./CommentBox";
 import { http } from "../api/http";
 import { getUser } from "../auth";
@@ -43,6 +43,7 @@ export default function PostItem({ post, onLike, onChanged, children, autoOpenCo
 
   const me = getUser();
   const canManage = me && (me.id === post.user_id || me.role === "admin");
+  const nav = useNavigate();
 
   const postUrl = `${window.location.origin}/posts/${post.id}`;
 
@@ -90,7 +91,13 @@ export default function PostItem({ post, onLike, onChanged, children, autoOpenCo
       {/* header */}
       <div className="post-head">
         <div className="post-left">
-          <div className="avatar">{avatarChar}</div>
+          <div className="avatar">
+            {post?.author_avatar ? (
+              <img src={post.author_avatar} alt={author} style={{ width: "100%", height: "100%", borderRadius: "999px", objectFit: "cover" }} />
+            ) : (
+              avatarChar
+            )}
+          </div>
 
           <div className="post-meta">
             <div className="post-author-row">
@@ -190,6 +197,7 @@ export default function PostItem({ post, onLike, onChanged, children, autoOpenCo
           className={`act act-like ${isLiked ? "act-liked" : ""}`}
           size="sm"
           onClick={() => {
+            if (!me) return nav("/login");
             setIsLiked(!isLiked);
             onLike?.(post.id);
           }}

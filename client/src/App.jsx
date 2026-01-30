@@ -30,31 +30,10 @@ export default function App() {
       {/* Share link: cho phép mở link bài viết */}
       <Route path="/posts/:id" element={<PostDetailPage />} />
 
-      {/* Private */}
-      <Route
-        path="/feed"
-        element={
-          <ProtectedRoute>
-            <FeedPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/restaurants"
-        element={
-          <ProtectedRoute>
-            <RestaurantsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/restaurants/:id"
-        element={
-          <ProtectedRoute>
-            <RestaurantDetailPage />
-          </ProtectedRoute>
-        }
-      />
+      {/* Public pages (feed and restaurants are viewable by guests) */}
+      <Route path="/feed" element={<FeedPage />} />
+      <Route path="/restaurants" element={<RestaurantsPage />} />
+      <Route path="/restaurants/:id" element={<RestaurantDetailPage />} />
 
       <Route
         path="/keo-an"

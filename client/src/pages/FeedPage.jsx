@@ -3,6 +3,7 @@ import AppLayout from "../components/AppLayout";
 import Composer from "../components/Composer";
 import FeedPostCard from "../components/FeedPostCard";
 import { http } from "../api/http";
+import { getUser } from "../auth";
 
 export default function FeedPage() {
   const [posts, setPosts] = useState([]);
@@ -46,16 +47,17 @@ export default function FeedPage() {
     } catch {}
   }
 
+  const user = getUser();
+
   return (
     <AppLayout>
       <div className="feed-wrap col">
-        <Composer restaurants={restaurants} onSubmit={createPost} loading={loadingPost} />
+        {user ? <Composer restaurants={restaurants} onSubmit={createPost} loading={loadingPost} /> : null}
         {err && <div className="err">{err}</div>}
 
         {posts.map((p) => (
           <FeedPostCard key={p.id} post={p} onLike={like} onChanged={load} />
         ))}
-
 
         {!posts.length && <div className="pill">Chưa có bài nào</div>}
       </div>

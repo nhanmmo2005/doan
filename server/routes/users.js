@@ -8,6 +8,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
+const { createFollowNotification } = require("../utils/notifications");
 
 // Try to use R2 for uploads if available
 let r2, PutObjectCommand;
@@ -337,6 +338,135 @@ router.get("/:id/eating-plans", optionalAuth, async (req, res) => {
     res.json(plans);
   } catch (e) {
     console.error("GET USER EATING PLANS ERROR:", e);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+/**
+ * POST /api/users/:userId/follow (toggle follow)
+ */
+router.post("/:userId/follow", auth, async (req, res) => {
+  try {
+    const targetUserId = Number(req.params.userId);
+    const currentUserId = req.user.uid;
+
+    // Can't follow yourself
+    if (targetUserId === currentUserId) {
+      return res.status(400).json({ msg: "Không thể theo dõi chính mình" });
+    }
+
+    // Check if target user exists
+    const [targetUser] = await pool.query(
+      "SELECT id FROM users WHERE id = ? AND status = 'active' LIMIT 1",
+      [targetUserId]
+    );
+
+    if (targetUser.length === 0) {
+      return res.status(404).json({ msg: "Người dùng không tồn tại" });
+    }
+
+    // Check if already following
+    const [existing] = await pool.query(
+      "SELECT id FROM user_follows WHERE follower_id = ? AND following_id = ?",
+      [currentUserId, targetUserId]
+    );
+
+    if (existing.length > 0) {
+      // Unfollow
+      await pool.query(
+        "DELETE FROM user_follows WHERE follower_id = ? AND following_id = ?",
+        [currentUserId, targetUserId]
+      );
+      return res.json({ following: false });
+    } else {
+      // Follow
+      await pool.query(
+        "INSERT INTO user_follows (follower_id, following_id) VALUES (?, ?)",
+        [currentUserId, targetUserId]
+      );
+
+      // Create notification for the followed user (async, don't wait)
+      createFollowNotification(targetUserId, currentUserId).catch(console.error);
+
+      return res.json({ following: true });
+    }
+  } catch (e) {
+    console.error("FOLLOW ERROR:", e);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+/**
+ * GET /api/users/:userId/followers
+ */
+router.get("/:userId/followers", optionalAuth, async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+
+    const [followers] = await pool.query(`
+      SELECT
+        u.id, u.name, u.avatar_url, u.bio,
+        uf.created_at as followed_at
+      FROM user_follows uf
+      JOIN users u ON u.id = uf.follower_id
+      WHERE uf.following_id = ?
+      ORDER BY uf.created_at DESC
+    `, [userId]);
+
+    res.json(followers);
+  } catch (e) {
+    console.error("GET FOLLOWERS ERROR:", e);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+/**
+ * GET /api/users/:userId/following
+ */
+router.get("/:userId/following", optionalAuth, async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+
+    const [following] = await pool.query(`
+      SELECT
+        u.id, u.name, u.avatar_url, u.bio,
+        uf.created_at as followed_at
+      FROM user_follows uf
+      JOIN users u ON u.id = uf.following_id
+      WHERE uf.follower_id = ?
+      ORDER BY uf.created_at DESC
+    `, [userId]);
+
+    res.json(following);
+  } catch (e) {
+    console.error("GET FOLLOWING ERROR:", e);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+/**
+ * GET /api/users/:userId/follow-status
+ */
+router.get("/:userId/follow-status", auth, async (req, res) => {
+  try {
+    const targetUserId = Number(req.params.userId);
+    const currentUserId = req.user.uid;
+
+    if (targetUserId === currentUserId) {
+      return res.json({ isFollowing: false, canFollow: false });
+    }
+
+    const [result] = await pool.query(
+      "SELECT 1 FROM user_follows WHERE follower_id = ? AND following_id = ?",
+      [currentUserId, targetUserId]
+    );
+
+    res.json({
+      isFollowing: result.length > 0,
+      canFollow: true
+    });
+  } catch (e) {
+    console.error("GET FOLLOW STATUS ERROR:", e);
     res.status(500).json({ msg: "Server error" });
   }
 });

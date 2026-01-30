@@ -21,7 +21,8 @@ router.get("/:planId/comments", async (req, res) => {
         `
         SELECT
           c.id, c.eating_plan_id, c.user_id, c.content, c.parent_id, c.created_at,
-          u.name AS author_name
+          u.name AS author_name,
+          u.avatar_url AS author_avatar
         FROM eating_plan_comments c
         JOIN users u ON u.id = c.user_id
         WHERE c.eating_plan_id = ?
@@ -70,6 +71,8 @@ router.post("/:planId/comments", auth, async (req, res) => {
     const planId = Number(req.params.planId);
     const uid = req.user.uid;
     const { content, parentId } = req.body;
+
+    console.log("[EAT-CMT] POST payload:", { planId, uid, content, parentId });
 
     if (!content || !content.trim()) {
       return res.status(400).json({ msg: "Bạn chưa nhập nội dung bình luận" });

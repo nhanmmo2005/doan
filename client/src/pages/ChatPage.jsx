@@ -72,6 +72,7 @@ function ChatMessage({ message, onDelete, canDelete, onImageClick }) {
   const me = getUser();
   const isMe = me && me.id === message.user_id;
   const avatarChar = (message.author_name?.[0] || "U").toUpperCase();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <div className={`chat-message ${isMe ? "chat-message-me" : ""}`}>
@@ -112,16 +113,35 @@ function ChatMessage({ message, onDelete, canDelete, onImageClick }) {
         </div>
 
         {canDelete && (
-          <Button
-            type="button"
-            className="chat-message-delete"
-            variant="danger"
-            size="sm"
-            onClick={() => onDelete(message.id)}
-            title="Xoá tin nhắn"
-          >
-            <FaTrash />
-          </Button>
+          <div className="chat-message-ellipsis">
+            <button
+              type="button"
+              className="btn-menu-trigger"
+              onClick={() => setMenuOpen((v) => !v)}
+              title="Tùy chọn"
+            >
+              <FaEllipsisV />
+            </button>
+
+            {menuOpen && (
+              <>
+                <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
+                <div className="menu" style={{ right: 0, left: "auto" }}>
+                  <button
+                    type="button"
+                    className="menuItem danger"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onDelete(message.id);
+                    }}
+                  >
+                    <span className="menuIcon"><FaTrash /></span>
+                    <span>Xoá tin nhắn</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -430,6 +450,7 @@ export default function ChatPage() {
                 size="sm"
                 onClick={() => setShowCreateRoom(!showCreateRoom)}
                 title="Tạo phòng chat mới"
+                style={{ padding: 0, display: "grid", placeItems: "center" }}
               >
                 <FaPlus />
               </Button>

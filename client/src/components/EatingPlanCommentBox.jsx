@@ -34,12 +34,18 @@ function buildTree(flat) {
 }
 
 function CommentNode({ node, onReply, onDelete, canManage }) {
-  const avatar = (node.author_name?.[0] || "U").toUpperCase();
+  const avatarChar = (node.author_name?.[0] || "U").toUpperCase();
 
   return (
     <div className="cmt-node">
       <div className="cmt-item">
-        <div className="avatar sm">{avatar}</div>
+        <div className="avatar sm">
+          {node.author_avatar ? (
+            <img src={node.author_avatar} alt={node.author_name} style={{ width: "100%", height: "100%", borderRadius: "999px", objectFit: "cover" }} />
+          ) : (
+            avatarChar
+          )}
+        </div>
 
         <div className="cmt-body">
           <div className="cmt-bubble">
@@ -56,7 +62,7 @@ function CommentNode({ node, onReply, onDelete, canManage }) {
               Trả lời
             </Button>
             {canManage && (
-              <Button type="button" className="cmt-btn danger" variant="danger" size="sm" onClick={() => onDelete(node.id)}>
+              <Button type="button" className="cmt-btn danger-text" variant="ghost" size="sm" onClick={() => onDelete(node.id)}>
                 <FaTrash style={{ marginRight: 4 }} />
                 Xoá
               </Button>
@@ -120,10 +126,9 @@ export default function EatingPlanCommentBox({ planId, inputRef }) {
 
     try {
       setLoading(true);
-      await http.post(`/api/eating-plans/${planId}/comments`, {
-        content: text.trim(),
-        parentId: replyTo?.id || null,
-      });
+      const payload = { content: text.trim(), parentId: replyTo?.id || null };
+      console.log("[EAT-CMT] POST payload:", payload);
+      await http.post(`/api/eating-plans/${planId}/comments`, payload);
 
       await reload();
       resetComposer();

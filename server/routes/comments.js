@@ -3,6 +3,7 @@ const express = require("express");
 const pool = require("../db");
 const auth = require("../middleware/auth");
 const filterText = require("../utils/filterText");
+const { createCommentNotification } = require("../utils/notifications");
 
 const router = express.Router();
 
@@ -17,7 +18,8 @@ router.get("/post/:postId", async (req, res) => {
       `
       SELECT
         c.id, c.post_id, c.user_id, c.parent_id, c.content, c.created_at,
-        u.name AS author_name
+        u.name AS author_name,
+        u.avatar_url AS author_avatar
       FROM post_comments c
       JOIN users u ON u.id = c.user_id
       WHERE c.post_id = ?
@@ -89,6 +91,9 @@ router.post("/:postId", auth, async (req, res) => {
         );
       }
     }
+
+    // Create notification for post owner (async, don't wait)
+    createCommentNotification(postId, commentId, req.user.uid, safe).catch(console.error);
 
     res.json({ ok: true, id: commentId });
   } catch (e) {

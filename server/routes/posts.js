@@ -4,6 +4,7 @@ const pool = require("../db");
 const auth = require("../middleware/auth");
 const filterText = require("../utils/filterText");
 const jwt = require("jsonwebtoken");
+const { createLikeNotification } = require("../utils/notifications");
 
 const router = express.Router();
 
@@ -37,6 +38,7 @@ router.get("/", optionalAuth, async (req, res) => {
         p.id, p.user_id, p.type, p.content, p.rating, p.created_at,
         p.restaurant_id, p.visibility,
         u.name AS author_name,
+        u.avatar_url AS author_avatar,
         r.name AS restaurant_name,
         r.area AS restaurant_area,
         (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id) AS like_count,
@@ -105,6 +107,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
         p.id, p.user_id, p.type, p.content, p.rating, p.created_at,
         p.restaurant_id, p.visibility,
         u.name AS author_name,
+        u.avatar_url AS author_avatar,
         r.name AS restaurant_name,
         r.area AS restaurant_area,
         (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id) AS like_count,
@@ -296,6 +299,10 @@ router.post("/:id/like", auth, async (req, res) => {
       return res.json({ liked: false });
     } else {
       await pool.query("INSERT INTO post_likes(post_id, user_id) VALUES(?,?)", [postId, uid]);
+
+      // Create notification for post owner (async, don't wait)
+      createLikeNotification(postId, uid).catch(console.error);
+
       return res.json({ liked: true });
     }
   } catch (e) {

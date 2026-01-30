@@ -2,6 +2,7 @@ const express = require("express");
 const pool = require("../db");
 const auth = require("../middleware/auth");
 const adminOnly = require("../middleware/adminOnly");
+const { createPromotionNotification } = require("../utils/notifications");
 
 const router = express.Router();
 
@@ -738,6 +739,28 @@ router.delete("/chat-rooms/:id", auth, adminOnly, async (req, res) => {
     res.json({ ok: true });
   } catch (e) {
     console.error("ADMIN DELETE CHAT ROOM ERROR:", e);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+/**
+ * POST /api/admin/notifications/promotion
+ * Tạo thông báo khuyến mãi cho tất cả users
+ */
+router.post("/notifications/promotion", auth, adminOnly, async (req, res) => {
+  try {
+    const { title, content } = req.body;
+
+    if (!title || !content) {
+      return res.status(400).json({ msg: "Cần nhập title và content" });
+    }
+
+    // Create promotion notification for all users (async, don't wait)
+    createPromotionNotification(title.trim(), content.trim()).catch(console.error);
+
+    res.json({ success: true, msg: "Đã gửi thông báo khuyến mãi cho tất cả người dùng" });
+  } catch (e) {
+    console.error("ADMIN CREATE PROMOTION NOTIFICATION ERROR:", e);
     res.status(500).json({ msg: "Server error" });
   }
 });

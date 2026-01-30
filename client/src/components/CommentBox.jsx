@@ -80,14 +80,10 @@ function MediaThumbs({ media }) {
 }
 
 function ActionBtn({ children, danger, onClick }) {
+  const className = danger ? "cmt-btn danger-text" : "cmt-btn";
+  const variant = danger ? "ghost" : "secondary";
   return (
-    <Button
-      type="button"
-      className={`cmt-btn ${danger ? "danger" : ""}`}
-      variant={danger ? "danger" : "secondary"}
-      size="sm"
-      onClick={onClick}
-    >
+    <Button type="button" className={className} variant={variant} size="sm" onClick={onClick}>
       {children}
     </Button>
   );
@@ -105,7 +101,13 @@ function CommentNode({
   return (
     <div className="cmt-node">
       <div className="cmt-item">
-        <div className="avatar sm">{avatar}</div>
+        <div className="avatar sm">
+          {node.author_avatar ? (
+            <img src={node.author_avatar} alt={node.author_name} style={{ width: "100%", height: "100%", borderRadius: "999px", objectFit: "cover" }} />
+          ) : (
+            avatar
+          )}
+        </div>
 
         <div className="cmt-body">
           <div className="cmt-bubble">

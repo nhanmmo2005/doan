@@ -63,28 +63,6 @@ export default function PostDetailPage() {
           <Button type="button" className="chip" variant="secondary" size="sm" onClick={() => nav(-1)}>
             ← Quay lại
           </Button>
-
-          <div className="pill" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <span className="muted" style={{ fontSize: 13 }}>Link bài viết</span>
-            <a
-              href={fullLink}
-              style={{
-                textDecoration: "none",
-                color: "inherit",
-                maxWidth: 420,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-              title={fullLink}
-            >
-              {fullLink}
-            </a>
-          </div>
-
-          <Button type="button" className="chip" variant="secondary" size="sm" onClick={copyLink}>
-            {copied ? "✓ Copied" : "Copy"}
-          </Button>
         </div>
 
         {loading && <div className="pill">Đang tải...</div>}

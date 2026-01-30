@@ -170,25 +170,10 @@ export default function Composer({ restaurants, onSubmit, loading }) {
     <div className="card composer-card">
       <div className="composer-head">
         <div className="composer-title">Tạo bài viết</div>
-        <div className="composer-sub">Status / rủ kèo / hỏi quán ngon — mạng xã hội mini</div>
       </div>
 
       <form onSubmit={handleSubmit} className="composer-form">
-        {!!restaurants?.length && (
-          <div className="composer-tag">
-            <span className="label">
-              <FontAwesomeIcon icon={faUtensils} /> Gắn quán (tuỳ chọn)
-            </span>
-            <select value={restaurantId} onChange={(e) => setRestaurantId(e.target.value)}>
-              <option value="">-- Chưa chọn --</option>
-              {restaurants.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name} ({r.area})
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        {/* Removed optional restaurant tag per request */}
 
         <div className="composer-row">
           <div className="avatar">U</div>
@@ -222,10 +207,7 @@ export default function Composer({ restaurants, onSubmit, loading }) {
               <span>Ảnh/Video</span>
             </button>
 
-            <span className="pill">
-              <FontAwesomeIcon icon={faTriangleExclamation} />
-              <span>Từ thô tục sẽ bị che</span>
-            </span>
+            {/* profanity hint removed per request */}
           </div>
 
           <Button className="btn-primary" variant="primary" size="md" disabled={busy}>

@@ -81,8 +81,8 @@ export default function ReviewCommentBox({ reviewId }) {
           {canManage && (
             <Button
               type="button"
-              className="review-comment-delete"
-              variant="danger"
+              className="review-comment-delete danger-text"
+              variant="ghost"
               size="sm"
               onClick={() => deleteComment(node.id)}
               title="Xóa"

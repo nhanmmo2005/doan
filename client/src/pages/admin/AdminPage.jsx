@@ -468,6 +468,7 @@ export default function AdminPage() {
     { id: "users", label: "Người dùng", icon: FaUsers },
     { id: "restaurants", label: "Quán ăn", icon: FaUtensils },
     { id: "banners", label: "Banners", icon: FaTag },
+    { id: "settings", label: "Branding", icon: FaEdit },
     { id: "eating-plans", label: "Kèo ăn", icon: FaCalendarAlt },
     { id: "chat", label: "Chat", icon: FaComments },
   ];
@@ -1019,6 +1020,19 @@ export default function AdminPage() {
                 {banners.length === 0 && <div className="empty-state">Chưa có banner nào</div>}
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === "settings" && (
+          <div className="admin-content">
+            <div className="admin-actions">
+              <Button variant="primary" size="md" onClick={() => {
+                const stored = localStorage.getItem("siteBrand");
+                alert(stored ? "Hiện cấu hình brand: " + stored : "Chưa có cấu hình brand");
+              }}>Xem cấu hình hiện tại</Button>
+            </div>
+
+            <BrandingEditor />
           </div>
         )}
 
