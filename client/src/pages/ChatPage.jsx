@@ -127,8 +127,8 @@ function ChatMessage({ message, onDelete, canDelete, onImageClick }) {
               <>
                 <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
                 <div className="menu" style={{ right: 0, left: "auto" }}>
-                  <button
-                    type="button"
+          <button
+            type="button"
                     className="menuItem danger"
                     onClick={() => {
                       setMenuOpen(false);
@@ -137,7 +137,7 @@ function ChatMessage({ message, onDelete, canDelete, onImageClick }) {
                   >
                     <span className="menuIcon"><FaTrash /></span>
                     <span>Xoá tin nhắn</span>
-                  </button>
+          </button>
                 </div>
               </>
             )}

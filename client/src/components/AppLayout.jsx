@@ -18,7 +18,6 @@ export default function AppLayout({ children }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
   const [brand, setBrand] = useState({ title: "Foodbook", logoUrl: null });
-  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     try {
@@ -87,7 +86,8 @@ export default function AppLayout({ children }) {
   // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuOpen && !event.target.closest('.topbar-user')) {
+      // If clicking outside both the user button and the user menu, close the menu.
+      if (menuOpen && !event.target.closest('.topbar-user') && !event.target.closest('.topbar-user-menu')) {
         setMenuOpen(false);
       }
       if (notificationsOpen && !event.target.closest('.topbar-notifications-menu') && !event.target.closest('.topbar-notifications-btn')) {
@@ -110,7 +110,7 @@ export default function AppLayout({ children }) {
         <div className="container">
           <div className="topbar-inner">
             {/* Left: brand */}
-            <div className="topbar-left" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div className="topbar-left">
               <Link to="/feed" className="brand" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 {brand.logoUrl ? (
                   <div className="brand-badge" style={{ padding: 2, overflow: "hidden", borderRadius: 8 }}>
@@ -121,22 +121,6 @@ export default function AppLayout({ children }) {
                 )}
                 <div className="brand-title" style={{ marginLeft: 4 }}>{brand.title}</div>
               </Link>
-              {/* Search (Facebook-like) */}
-              <div className="search" style={{ marginLeft: 8 }}>
-                <input
-                  type="search"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Tìm kiếm món ăn"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      const q = searchTerm.trim();
-                      if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
-                    }
-                  }}
-                />
-              </div>
             </div>
 
             {/* Center: horizontal menu */}
@@ -363,7 +347,7 @@ export default function AppLayout({ children }) {
       <div className="container">
         <div className="row">
           {/* Main */}
-          <div style={{ flex: 1 }}>{children}</div>
+          <div style={{ flex: 1 }} className="main-content">{children}</div>
 
           {/* Right column (Banner Carousel) - hidden on admin pages */}
           {showBanner && (

@@ -357,13 +357,13 @@ function ReviewForm({ restaurant, onSubmit }) {
             {comment.length}/500 ký tự
           </span>
         <Button
-          type="submit"
+            type="submit"
           variant="primary"
           size="md"
-          disabled={!avgRating || submitting || uploading}
-          style={{ minWidth: 120 }}
-        >
-          {uploading ? "Đang tải..." : submitting ? "Đang gửi..." : "Gửi đánh giá"}
+            disabled={!avgRating || submitting || uploading}
+            style={{ minWidth: 120 }}
+          >
+            {uploading ? "Đang tải..." : submitting ? "Đang gửi..." : "Gửi đánh giá"}
         </Button>
         </div>
         <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>

@@ -420,6 +420,14 @@ textarea{
   justify-content: center; /* center the main + right columns within the row */
 }
 
+/* Fix: ensure main content is fluid (prevents feed fixed-width rule from shrinking admin) */
+.row > .main-content {
+  flex: 1 1 auto;
+  width: auto;
+  max-width: none;
+  min-width: 0;
+}
+
 /* Sidebar removed - using topbar navigation instead */
 .hide-right{ display: block; }
 @media (max-width: 1060px){
@@ -3296,7 +3304,9 @@ input {
   gap: 8px;
   margin-bottom: 24px;
   border-bottom: 2px solid var(--border);
-  overflow-x: auto;
+  overflow-x: visible; /* allow wrapping instead of forcing horizontal scroll */
+  flex-wrap: wrap;     /* wrap tabs to new lines so users don't have to drag */
+  align-items: center;
 }
 
 .admin-tab {
@@ -3313,6 +3323,7 @@ input {
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  margin-bottom: 8px; /* spacing when tabs wrap to next line */
 }
 
 .admin-tab:hover {

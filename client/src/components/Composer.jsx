@@ -27,7 +27,7 @@ function MediaPreview({ previews, onRemove }) {
     <div className="composer-preview">
       {/* Videos: 1 dòng / video */}
       {videos.map((v, idx) => (
-          <div className="preview-video" key={`v-${idx}`}>
+        <div className="preview-video" key={`v-${idx}`}>
           <video controls preload="metadata">
             <source src={v.url} />
           </video>

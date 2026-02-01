@@ -198,11 +198,11 @@ export default function EatingPlanCommentBox({ planId, inputRef }) {
               placeholder="Viết bình luận…"
             />
 
-          <div className="cmt-composeTools">
+            <div className="cmt-composeTools">
             <Button className="primary" variant="primary" size="md" disabled={loading}>
-              {loading ? "Đang gửi…" : "Gửi"}
+                {loading ? "Đang gửi…" : "Gửi"}
             </Button>
-          </div>
+            </div>
           </div>
         </form>
       )}
