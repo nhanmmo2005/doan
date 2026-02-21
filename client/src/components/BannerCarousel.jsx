@@ -38,7 +38,7 @@ export default function BannerCarousel() {
   if (loading) {
     return (
       <div className="card soft side-section">
-        <div className="side-title">Khuyến mãi & Booking</div>
+        <div className="side-title">Khuyến mãi</div>
         <div className="muted" style={{ fontSize: 13, padding: 12, textAlign: "center" }}>
           Đang tải...
         </div>
@@ -49,7 +49,7 @@ export default function BannerCarousel() {
   if (banners.length === 0) {
     return (
       <div className="card soft side-section">
-        <div className="side-title">Khuyến mãi & Booking</div>
+        <div className="side-title">Khuyến mãi</div>
         <div className="muted" style={{ fontSize: 13, padding: 12, textAlign: "center" }}>
           Chưa có khuyến mãi nào
         </div>

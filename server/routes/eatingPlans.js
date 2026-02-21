@@ -35,6 +35,7 @@ router.get("/", optionalAuth, async (req, res) => {
         ep.restaurant_name, ep.planned_at, ep.max_participants, 
         ep.status, ep.created_at, ep.updated_at,
         u.name AS creator_name,
+        u.avatar_url AS creator_avatar,
         r.name AS restaurant_name,
         r.area AS restaurant_area,
         r.address AS restaurant_address,

@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { http } from "../api/http";
 import { getUser } from "../auth";
-import { FaTrash, FaReply } from "react-icons/fa";
+import { FaTrash, FaReply, FaEllipsisV, FaFlag } from "react-icons/fa";
 import Button from "./ui/Button";
+import ReportModal from "./ReportModal";
 
 export default function ReviewCommentBox({ reviewId }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyContent, setReplyContent] = useState("");
+  const [activeMenuId, setActiveMenuId] = useState(null);
+  const [reportNode, setReportNode] = useState(null);
   const me = getUser();
 
   useEffect(() => {
@@ -59,6 +62,7 @@ export default function ReviewCommentBox({ reviewId }) {
   function renderComment(node, depth = 0) {
     const canManage = me && (me.id === node.user_id || me.role === "admin");
     const isReplying = replyingTo === node.id;
+    const isMenuOpen = activeMenuId === node.id;
 
     return (
       <div key={node.id} className="review-comment-item" style={{ marginLeft: depth * 24 }}>
@@ -78,18 +82,53 @@ export default function ReviewCommentBox({ reviewId }) {
               </div>
             </div>
           </div>
-          {canManage && (
-            <Button
+          
+          <div className="menuWrap">
+            <button
               type="button"
-              className="review-comment-delete danger-text"
-              variant="ghost"
-              size="sm"
-              onClick={() => deleteComment(node.id)}
-              title="Xóa"
+              className="btn-menu-trigger"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveMenuId(isMenuOpen ? null : node.id);
+              }}
+              style={{ fontSize: 14, opacity: 0.6 }}
             >
-              <FaTrash />
-            </Button>
-          )}
+              <FaEllipsisV />
+            </button>
+            {isMenuOpen && (
+              <>
+                <div className="menu-backdrop" onClick={() => setActiveMenuId(null)} />
+                <div className="menu" style={{ right: 0, left: "auto" }}>
+                  {canManage && (
+                    <button
+                      type="button"
+                      className="menuItem danger"
+                      onClick={() => {
+                        deleteComment(node.id);
+                        setActiveMenuId(null);
+                      }}
+                    >
+                      <FaTrash style={{ marginRight: 8 }} />
+                      Xóa
+                    </button>
+                  )}
+                  {me && me.id !== node.user_id && (
+                    <button
+                      type="button"
+                      className="menuItem"
+                      onClick={() => {
+                        setReportNode(node);
+                        setActiveMenuId(null);
+                      }}
+                    >
+                      <FaFlag style={{ marginRight: 8 }} />
+                      Báo cáo
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <div className="review-comment-content">{node.content}</div>
         {me && (
@@ -202,6 +241,14 @@ export default function ReviewCommentBox({ reviewId }) {
         <div className="review-comments-list">
           {comments.map((comment) => renderComment(comment))}
         </div>
+      )}
+
+      {reportNode && (
+        <ReportModal
+          targetType="review_comment"
+          targetId={reportNode.id}
+          onClose={() => setReportNode(null)}
+        />
       )}
     </div>
   );

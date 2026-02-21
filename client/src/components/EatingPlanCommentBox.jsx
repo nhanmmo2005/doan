@@ -2,8 +2,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { http } from "../api/http";
 import { getUser } from "../auth";
-import { FaTrash } from "react-icons/fa";
+import { FaTrash, FaEllipsisV, FaFlag } from "react-icons/fa";
 import Button from "./ui/Button";
+import ReportModal from "./ReportModal";
 
 function fmtTime(ts) {
   try {
@@ -33,15 +34,57 @@ function buildTree(flat) {
   return roots;
 }
 
-function CommentNode({ node, onReply, onDelete, canManage }) {
+function ActionBtn({ children, danger, onClick }) {
+  const className = danger ? "cmt-btn danger-text" : "cmt-btn";
+  return (
+    <button
+      type="button"
+      className={className}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function CommentNode({ node, onReply, onDelete, canManage, focusCommentId, expandToFocused }) {
   const avatarChar = (node.author_name?.[0] || "U").toUpperCase();
+  const [showReplies, setShowReplies] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const me = getUser();
+
+  const isFocused = focusCommentId && String(node.id) === String(focusCommentId);
+
+  // Auto expand replies along the path to the focused comment
+  useEffect(() => {
+    if (expandToFocused && node.replies?.length > 0) {
+      const hasFocusedInReplies = node.replies.some((r) => expandToFocused.has(String(r.id)));
+      if (hasFocusedInReplies) setShowReplies(true);
+    }
+  }, [expandToFocused, node.replies]);
+
+  const handleReplyClick = () => {
+    setShowReplies(true);
+    onReply(node);
+  };
 
   return (
-    <div className="cmt-node">
+    <div
+      id={`epcmt-${node.id}`}
+      className={`cmt-node ${isFocused ? "focused-highlight" : ""}`}
+    >
       <div className="cmt-item">
         <div className="avatar sm">
           {node.author_avatar ? (
-            <img src={node.author_avatar} alt={node.author_name} style={{ width: "100%", height: "100%", borderRadius: "999px", objectFit: "cover" }} />
+            <img
+              src={node.author_avatar}
+              alt={node.author_name}
+              style={{ width: "100%", height: "100%", borderRadius: "999px", objectFit: "cover" }}
+            />
           ) : (
             avatarChar
           )}
@@ -50,28 +93,87 @@ function CommentNode({ node, onReply, onDelete, canManage }) {
         <div className="cmt-body">
           <div className="cmt-bubble">
             <div className="cmt-top">
-              <div className="cmt-name truncate">{node.author_name || "User"}</div>
+              <div className="cmt-name truncate">
+                {node.author_name || "User"}
+                {isFocused && <span className="focus-badge" style={{ marginLeft: 8 }}>Nội dung bị báo cáo</span>}
+              </div>
               <div className="cmt-time">{fmtTime(node.created_at)}</div>
+              <div className="cmt-more" style={{ marginLeft: "auto" }}>
+                <div className="menuWrap">
+                  <button
+                    type="button"
+                    className="btn-menu-trigger"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpen((x) => !x);
+                    }}
+                    style={{ fontSize: 12, opacity: 0.6 }}
+                  >
+                    <FaEllipsisV />
+                  </button>
+                  {menuOpen && (
+                    <>
+                      <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
+                      <div className="menu" style={{ right: 0, left: "auto" }}>
+                        {canManage && (
+                          <button
+                            type="button"
+                            className="menuItem danger"
+                            onClick={() => {
+                              onDelete(node.id);
+                              setMenuOpen(false);
+                            }}
+                          >
+                            <FaTrash style={{ marginRight: 8 }} />
+                            Xóa
+                          </button>
+                        )}
+                        {me && me.id !== node.user_id && (
+                          <button
+                            type="button"
+                            className="menuItem"
+                            onClick={() => {
+                              setShowReport(true);
+                              setMenuOpen(false);
+                            }}
+                          >
+                            <FaFlag style={{ marginRight: 8 }} />
+                            Báo cáo
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="cmt-text">{node.content}</div>
           </div>
 
           <div className="cmt-rowActions">
-            <Button type="button" className="cmt-btn" variant="secondary" size="sm" onClick={() => onReply(node)}>
-              Trả lời
-            </Button>
-            {canManage && (
-              <Button type="button" className="cmt-btn danger-text" variant="ghost" size="sm" onClick={() => onDelete(node.id)}>
-                <FaTrash style={{ marginRight: 4 }} />
-                Xoá
-              </Button>
-            )}
+            <ActionBtn onClick={handleReplyClick}>Trả lời</ActionBtn>
           </div>
         </div>
       </div>
 
-      {node.replies?.length ? (
+      {node.replies?.length > 0 && (
+        <div style={{ marginTop: 4 }}>
+          <button
+            type="button"
+            className="cmt-btn"
+            style={{ fontWeight: 600, color: "var(--primary)", fontSize: 13, background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowReplies(!showReplies);
+            }}
+          >
+            {showReplies ? "Ẩn phản hồi" : `Xem ${node.replies.length} phản hồi`}
+          </button>
+        </div>
+      )}
+
+      {showReplies && node.replies?.length > 0 && (
         <div className="cmt-replies">
           {node.replies.map((r) => (
             <CommentNode
@@ -80,15 +182,25 @@ function CommentNode({ node, onReply, onDelete, canManage }) {
               onReply={onReply}
               onDelete={onDelete}
               canManage={canManage}
+              focusCommentId={focusCommentId}
+              expandToFocused={expandToFocused}
             />
           ))}
         </div>
-      ) : null}
+      )}
+
+      {showReport && (
+        <ReportModal
+          targetType="eating_plan_comment"
+          targetId={node.id}
+          onClose={() => setShowReport(false)}
+        />
+      )}
     </div>
   );
 }
 
-export default function EatingPlanCommentBox({ planId, inputRef }) {
+export default function EatingPlanCommentBox({ planId, inputRef, focusCommentId }) {
   const [err, setErr] = useState("");
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -127,7 +239,6 @@ export default function EatingPlanCommentBox({ planId, inputRef }) {
     try {
       setLoading(true);
       const payload = { content: text.trim(), parentId: replyTo?.id || null };
-      console.log("[EAT-CMT] POST payload:", payload);
       await http.post(`/api/eating-plans/${planId}/comments`, payload);
 
       await reload();
@@ -157,6 +268,40 @@ export default function EatingPlanCommentBox({ planId, inputRef }) {
 
   const tree = useMemo(() => buildTree(items), [items]);
 
+  // Build set of ids to expand (walk up from focused comment to root)
+  const expandToFocused = useMemo(() => {
+    if (!focusCommentId) return null;
+    const focusIdStr = String(focusCommentId);
+    const byId = new Map(items.map((x) => [String(x.id), x]));
+    const s = new Set([focusIdStr]);
+
+    let cur = byId.get(focusIdStr);
+    while (cur && cur.parent_id) {
+      const parentIdStr = String(cur.parent_id);
+      s.add(parentIdStr);
+      cur = byId.get(parentIdStr);
+    }
+    return s;
+  }, [items, focusCommentId]);
+
+  // After items loaded, scroll to focused comment
+  useEffect(() => {
+    if (!focusCommentId) return;
+    if (!items?.length) return;
+
+    const id = String(focusCommentId);
+    const t = setTimeout(() => {
+      const el = document.getElementById(`epcmt-${id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("highlight-flash");
+        setTimeout(() => el.classList.remove("highlight-flash"), 3000);
+      }
+    }, 250);
+
+    return () => clearTimeout(t);
+  }, [items, focusCommentId]);
+
   return (
     <div className="cmt-box">
       {err && <div className="err" style={{ marginBottom: 10 }}>{err}</div>}
@@ -170,6 +315,8 @@ export default function EatingPlanCommentBox({ planId, inputRef }) {
               onReply={handleReply}
               onDelete={handleDelete}
               canManage={me && (me.id === n.user_id || me.role === "admin")}
+              focusCommentId={focusCommentId}
+              expandToFocused={expandToFocused}
             />
           ))}
         </div>
@@ -194,14 +341,13 @@ export default function EatingPlanCommentBox({ planId, inputRef }) {
               ref={focusRef}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              onPaste={(e) => {}}
               placeholder="Viết bình luận…"
             />
 
             <div className="cmt-composeTools">
-            <Button className="primary" variant="primary" size="md" disabled={loading}>
+              <Button className="primary" variant="primary" size="md" disabled={loading}>
                 {loading ? "Đang gửi…" : "Gửi"}
-            </Button>
+              </Button>
             </div>
           </div>
         </form>

@@ -86,7 +86,9 @@ router.get("/rooms/:id", optionalAuth, async (req, res) => {
 
 /**
  * POST /api/chat/rooms
- * Create new chat room (Admin only or allow users)
+ * Create new chat room
+ * - Admin tạo: active
+ * - User tạo: pending (chờ duyệt)
  */
 router.post("/rooms", auth, async (req, res) => {
   try {
@@ -100,13 +102,19 @@ router.post("/rooms", auth, async (req, res) => {
     const safeDescription = description ? filterText(description.trim()) : null;
     const safeTopic = topic ? filterText(topic.trim()) : null;
 
+    const status = req.user.role === "admin" ? "active" : "pending";
+
     const [ins] = await pool.query(
       `INSERT INTO chat_rooms (name, description, topic, created_by, status)
-       VALUES (?, ?, ?, ?, 'active')`,
-      [safeName, safeDescription, safeTopic, req.user.uid]
+       VALUES (?, ?, ?, ?, ?)`,
+      [safeName, safeDescription, safeTopic, req.user.uid, status]
     );
 
-    res.json({ ok: true, id: ins.insertId });
+    if (status === "pending") {
+      return res.json({ ok: true, id: ins.insertId, status, msg: "Phòng chat đang chờ admin duyệt" });
+    }
+
+    res.json({ ok: true, id: ins.insertId, status });
   } catch (e) {
     console.error("CREATE CHAT ROOM ERROR:", e);
     res.status(500).json({ msg: "Server error" });
@@ -153,6 +161,14 @@ router.delete("/rooms/:id", auth, async (req, res) => {
 router.get("/rooms/:roomId/messages", optionalAuth, async (req, res) => {
   try {
     const roomId = Number(req.params.roomId);
+
+    // Block access if room is not active (pending/rejected/archived)
+    const [rooms] = await pool.query("SELECT status FROM chat_rooms WHERE id = ? LIMIT 1", [roomId]);
+    if (!rooms.length) return res.status(404).json({ msg: "Không tìm thấy phòng chat" });
+    if (rooms[0].status !== 'active') {
+      return res.status(403).json({ msg: "Phòng chat chưa được duyệt" });
+    }
+
     const limit = Math.min(Number(req.query.limit) || 50, 100);
     const before = req.query.before ? new Date(req.query.before) : null;
 

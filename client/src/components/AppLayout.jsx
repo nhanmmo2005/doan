@@ -7,7 +7,7 @@ import { FaBell } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { http } from "../api/http";
 
-export default function AppLayout({ children }) {
+export default function AppLayout({ children, left }) {
   const user = getUser();
   const isAdmin = user?.role === "admin";
   const location = useLocation();
@@ -17,25 +17,31 @@ export default function AppLayout({ children }) {
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
-  const [brand, setBrand] = useState({ title: "Foodbook", logoUrl: null });
-
-  useEffect(() => {
+  const [brand, setBrand] = useState(() => {
     try {
       const stored = localStorage.getItem("siteBrand");
       if (stored) {
         const parsed = JSON.parse(stored);
-        setBrand({
+        return {
           title: parsed.title || "Foodbook",
           logoUrl: parsed.logoUrl || null,
-        });
+        };
       }
     } catch (e) {
       // ignore
     }
-  }, []);
+    return { title: "Foodbook", logoUrl: null };
+  });
 
-  // Hide banner carousel on admin pages
-  const showBanner = !location.pathname.startsWith('/admin');
+  // Update tab title
+  useEffect(() => {
+    try {
+      document.title = brand?.title || "Foodbook";
+    } catch {}
+  }, [brand?.title]);
+
+  // Only show promotions/banners on Feed page to keep space for other features.
+  const showBanner = location.pathname === "/feed";
 
   // Fetch notifications
   const fetchNotifications = async () => {
@@ -113,8 +119,27 @@ export default function AppLayout({ children }) {
             <div className="topbar-left">
               <Link to="/feed" className="brand" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 {brand.logoUrl ? (
-                  <div className="brand-badge" style={{ padding: 2, overflow: "hidden", borderRadius: 8 }}>
-                    <img src={brand.logoUrl} alt={brand.title} style={{ width: 34, height: 34, objectFit: "cover", display: "block" }} />
+                  <div className="brand-badge" style={{
+                    width: 36,
+                    height: 36,
+                    padding: 4,
+                    overflow: "hidden",
+                    borderRadius: 10,
+                    border: "1px solid var(--border)",
+                    background: "white",
+                    display: "grid",
+                    placeItems: "center",
+                  }}>
+                    <img
+                      src={brand.logoUrl}
+                      alt={brand.title}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                        display: "block",
+                      }}
+                    />
                   </div>
                 ) : (
                   <div className="brand-badge" />
@@ -346,12 +371,19 @@ export default function AppLayout({ children }) {
       {/* Layout */}
       <div className="container">
         <div className="row">
+          {/* Left column (optional) */}
+          {left && (
+            <div style={{ width: 280, position: "sticky", top: 78, alignSelf: "flex-start" }} className="left-col hide-left">
+              {left}
+            </div>
+          )}
+
           {/* Main */}
-          <div style={{ flex: 1 }} className="main-content">{children}</div>
+          <div className="main-content">{children}</div>
 
           {/* Right column (Banner Carousel) - hidden on admin pages */}
           {showBanner && (
-            <div style={{ width: 280, position: "sticky", top: 78, alignSelf: "flex-start" }} className="hide-right">
+            <div style={{ width: 280, position: "sticky", top: 78, alignSelf: "flex-start" }} className="right-col hide-right">
               <BannerCarousel />
             </div>
           )}

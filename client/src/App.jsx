@@ -5,6 +5,7 @@ import FeedPage from "./pages/FeedPage";
 import RestaurantsPage from "./pages/RestaurantsPage";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage";
 import AdminPage from "./pages/admin/AdminPage";
+import AdminReportsPage from "./pages/admin/AdminReportsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PostDetailPage from "./pages/PostDetailPage";
 import KeoAnPage from "./pages/KeoAnPage";
@@ -73,6 +74,14 @@ export default function App() {
         element={
           <ProtectedRoute role="admin">
             <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/reports"
+        element={
+          <ProtectedRoute role="admin">
+            <AdminReportsPage />
           </ProtectedRoute>
         }
       />

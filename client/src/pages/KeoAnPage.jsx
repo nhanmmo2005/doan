@@ -1,5 +1,6 @@
 // client/src/pages/KeoAnPage.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import AppLayout from "../components/AppLayout";
 import { http } from "../api/http";
 import { getUser } from "../auth";
@@ -16,8 +17,10 @@ import {
   FaComments,
   FaMoneyBillWave,
   FaTimes,
+  FaFlag,
 } from "react-icons/fa";
 import Button from "../components/ui/Button";
+import ReportModal from "../components/ReportModal";
 
 function fmtDateTime(dt) {
   try {
@@ -46,7 +49,7 @@ function fmtTime(dt) {
   }
 }
 
-function KeoAnCard({ plan, onChanged }) {
+function KeoAnCard({ plan, onChanged, initialShowComments = false, focusCommentId }) {
   const me = getUser();
   const isJoined = plan.is_joined;
   const isCreator = plan.is_creator;
@@ -55,7 +58,12 @@ function KeoAnCard({ plan, onChanged }) {
   const isPast = new Date(plan.planned_at) < new Date();
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(initialShowComments);
+  const [showReport, setShowReport] = useState(false);
+
+  useEffect(() => {
+    if (initialShowComments) setShowComments(true);
+  }, [initialShowComments]);
 
   async function handleJoin() {
     try {
@@ -103,11 +111,11 @@ function KeoAnCard({ plan, onChanged }) {
   const location = plan.location || plan.restaurant_name || "";
 
   return (
-    <div className="card keo-an-card">
+    <div id={`plan-${plan.id}`} className="card keo-an-card">
       <div className="keo-an-header">
         <div className="keo-an-title-row">
           <h3 className="keo-an-title">{plan.title}</h3>
-          {isCreator && (
+          {me && (
             <div className="menuWrap">
               <button
                 type="button"
@@ -121,17 +129,35 @@ function KeoAnCard({ plan, onChanged }) {
                 <>
                   <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
                   <div className="menu menu-post">
-                    <button
-                      type="button"
-                      className="menuItem danger"
-                      onClick={() => {
-                        handleDelete();
-                        setMenuOpen(false);
-                      }}
-                    >
-                      <span className="menuIcon"><FaTrash /></span>
-                      <span>Xoá kèo</span>
-                    </button>
+                    {isCreator ? (
+                      <button
+                        type="button"
+                        className="menuItem danger"
+                        onClick={() => {
+                          handleDelete();
+                          setMenuOpen(false);
+                        }}
+                      >
+                        <span className="menuIcon">
+                          <FaTrash />
+                        </span>
+                        <span>Xoá kèo</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="menuItem"
+                        onClick={() => {
+                          setShowReport(true);
+                          setMenuOpen(false);
+                        }}
+                      >
+                        <span className="menuIcon">
+                          <FaFlag />
+                        </span>
+                        <span>Báo cáo kèo</span>
+                      </button>
+                    )}
                   </div>
                 </>
               )}
@@ -139,7 +165,21 @@ function KeoAnCard({ plan, onChanged }) {
           )}
         </div>
         <div className="keo-an-meta">
-          <span className="keo-an-creator">👤 {plan.creator_name}</span>
+          <span className="keo-an-creator" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+            {plan.creator_avatar ? (
+              <img
+                src={plan.creator_avatar}
+                alt={plan.creator_name || "Avatar"}
+                style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }}
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            ) : (
+              <span aria-hidden>👤</span>
+            )}
+            <span>{plan.creator_name}</span>
+          </span>
           <span className="keo-an-status" style={{ color: statusColors[plan.status] || "#666" }}>
             {statusTexts[plan.status] || plan.status}
           </span>
@@ -185,7 +225,7 @@ function KeoAnCard({ plan, onChanged }) {
         )}
       </div>
 
-          {me && (
+      {me && (
         <div className="keo-an-actions">
           {canJoin && (
             <Button type="button" variant="primary" size="sm" onClick={handleJoin}>
@@ -220,8 +260,16 @@ function KeoAnCard({ plan, onChanged }) {
 
       {showComments && (
         <div className="keo-an-comments" style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-          <EatingPlanCommentBox planId={plan.id} />
+          <EatingPlanCommentBox planId={plan.id} focusCommentId={focusCommentId} />
         </div>
+      )}
+
+      {showReport && (
+        <ReportModal
+          targetType="eating_plan"
+          targetId={plan.id}
+          onClose={() => setShowReport(false)}
+        />
       )}
     </div>
   );
@@ -381,6 +429,11 @@ function KeoAnFormModal({ restaurants, onSubmit, onClose }) {
 }
 
 export default function KeoAnPage() {
+  const loc = useLocation();
+  const search = useMemo(() => new URLSearchParams(loc.search), [loc.search]);
+  const focusPlanId = search.get("focus");
+  const focusCommentId = search.get("focus_comment");
+
   const [plans, setPlans] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -409,8 +462,24 @@ export default function KeoAnPage() {
         http.get(`/api/eating-plans?upcoming=${filter === "upcoming" ? "true" : "false"}`),
         http.get("/api/restaurants"),
       ]);
-      setPlans(p.data || []);
+      const data = p.data || [];
+      setPlans(data);
       setRestaurants(r.data || []);
+
+      // Scroll to focus plan if needed
+      if (focusPlanId) {
+        setTimeout(() => {
+          const el = document.getElementById(`plan-${focusPlanId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            el.classList.add("focused-highlight");
+            // Chỉ bỏ highlight bài viết nếu có comment bị focus bên trong
+            if (!focusCommentId) {
+              setTimeout(() => el.classList.remove("focused-highlight"), 3000);
+            }
+          }
+        }, 300);
+      }
     } catch (e) {
       setErr(e?.response?.data?.msg || "Tải danh sách thất bại");
     } finally {
@@ -472,7 +541,7 @@ export default function KeoAnPage() {
           />
         )}
 
-        {loading && <div className="pill">Đang tải...</div>}
+        {loading && plans.length === 0 && <div className="pill">Đang tải...</div>}
 
         {!loading && plans.length === 0 && (
           <div className="card" style={{ padding: 40, textAlign: "center" }}>
@@ -483,14 +552,15 @@ export default function KeoAnPage() {
           </div>
         )}
 
-        {!loading &&
-          plans.map((plan) => (
-            <KeoAnCard
-              key={plan.id}
-              plan={plan}
-              onChanged={load}
-            />
-          ))}
+        {plans.map((plan) => (
+          <KeoAnCard
+            key={plan.id}
+            plan={plan}
+            onChanged={load}
+            initialShowComments={focusPlanId === String(plan.id) && !!focusCommentId}
+            focusCommentId={focusPlanId === String(plan.id) ? focusCommentId : null}
+          />
+        ))}
       </div>
     </AppLayout>
   );

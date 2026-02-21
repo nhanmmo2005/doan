@@ -551,6 +551,8 @@ export default function RestaurantDetailPage() {
   const [loading, setLoading] = useState(false);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [err, setErr] = useState("");
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   useEffect(() => {
     loadRestaurant();
@@ -702,7 +704,30 @@ export default function RestaurantDetailPage() {
                 {restaurant.latitude && restaurant.longitude && (
                   <div style={{ color: "var(--muted)", fontSize: 14, marginBottom: 12 }}>
                     <FaLocationArrow style={{ marginRight: 4 }} />
-                    {typeof restaurant.latitude === 'number' ? restaurant.latitude.toFixed(6) : restaurant.latitude}, {typeof restaurant.longitude === 'number' ? restaurant.longitude.toFixed(6) : restaurant.longitude}
+                    {typeof restaurant.latitude === "number" ? restaurant.latitude.toFixed(6) : restaurant.latitude}, {typeof restaurant.longitude === "number" ? restaurant.longitude.toFixed(6) : restaurant.longitude}
+                    <div style={{ marginTop: 8 }}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          const lat = Number(restaurant.latitude);
+                          const lng = Number(restaurant.longitude);
+                          const hasLatLng = Number.isFinite(lat) && Number.isFinite(lng);
+
+                          const url = hasLatLng
+                            ? `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}`
+                            : restaurant.address
+                              ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.address)}`
+                              : null;
+
+                          if (!url) return;
+                          window.open(url, "_blank", "noopener,noreferrer");
+                        }}
+                      >
+                        Mở Google Maps
+                      </Button>
+                    </div>
                   </div>
                 )}
                 {restaurant.avg_rating && (
@@ -720,6 +745,55 @@ export default function RestaurantDetailPage() {
                 )}
               </div>
             </div>
+
+            {/* Mô tả quán */}
+            {restaurant.description && (
+              <div style={{ marginTop: 16, borderTop: "1px solid var(--border)", paddingTop: 16 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>Mô tả quán</h3>
+                <div style={{ fontSize: 15, lineHeight: "1.6", color: "var(--text)", whiteSpace: "pre-wrap" }}>
+                  {restaurant.description}
+                </div>
+              </div>
+            )}
+
+            {/* Gallery ảnh */}
+            {restaurant.media && restaurant.media.length > 0 && (
+              <div style={{ marginTop: 24, borderTop: "1px solid var(--border)", paddingTop: 16 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Hình ảnh ({restaurant.media.length})</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12 }}>
+                  {restaurant.media.map((m, idx) => (
+                    <div
+                      key={m.id || idx}
+                      style={{
+                        aspectRatio: "1/1",
+                        borderRadius: 12,
+                        overflow: "hidden",
+                        cursor: "pointer",
+                        border: "1px solid var(--border)"
+                      }}
+                      onClick={() => {
+                        setLightboxIndex(idx);
+                        setLightboxOpen(true);
+                      }}
+                    >
+                      <img 
+                        src={m.url} 
+                        alt="" 
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                      />
+                    </div>
+                  ))}
+                </div>
+                <Lightbox
+                  open={lightboxOpen}
+                  items={restaurant.media.map(m => ({ url: m.url, mediaType: 'image' }))}
+                  index={lightboxIndex}
+                  onClose={() => setLightboxOpen(false)}
+                  onPrev={() => setLightboxIndex(i => (i > 0 ? i - 1 : restaurant.media.length - 1))}
+                  onNext={() => setLightboxIndex(i => (i < restaurant.media.length - 1 ? i + 1 : 0))}
+                />
+              </div>
+            )}
           </div>
         </div>
 

@@ -57,6 +57,7 @@ app.use("/api/users", require("./routes/users"));
 app.use("/api/chat", require("./routes/chat"));
 app.use("/api/banners", require("./routes/banners"));
 app.use("/api/notifications", require("./routes/notifications"));
+app.use("/api/reports", require("./routes/reports"));
 
 
 const PORT = process.env.PORT || 5000;

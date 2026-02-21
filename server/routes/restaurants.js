@@ -33,7 +33,7 @@ router.get("/", optionalAuth, async (req, res) => {
 
     let query = `
       SELECT 
-        id, name, area, type, price_range, image_url, address,
+        id, name, area, type, price_range, image_url, address, description,
         meal_time, latitude, longitude, avg_rating, review_count, is_featured
       FROM restaurants 
       WHERE 1=1
@@ -125,7 +125,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
 
     const [rows] = await pool.query(
       `SELECT 
-        id, name, area, type, price_range, image_url, address,
+        id, name, area, type, price_range, image_url, address, description,
         meal_time, latitude, longitude, avg_rating, review_count, is_featured,
         created_at
       FROM restaurants 
@@ -137,7 +137,21 @@ router.get("/:id", optionalAuth, async (req, res) => {
       return res.status(404).json({ msg: "Restaurant not found" });
     }
 
-    res.json(rows[0]);
+    const restaurant = rows[0];
+
+    // Lấy danh sách ảnh/video từ restaurant_media
+    const [media] = await pool.query(
+      `SELECT id, media_type, url, sort_order 
+       FROM restaurant_media 
+       WHERE restaurant_id = ? 
+       ORDER BY sort_order ASC`,
+      [id]
+    );
+
+    res.json({
+      ...restaurant,
+      media: media || []
+    });
   } catch (e) {
     console.error("RESTAURANT DETAIL ERROR:", e);
     res.status(500).json({ msg: "Server error" });

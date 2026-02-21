@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import AppLayout from "../../components/AppLayout";
 import { http } from "../../api/http";
 import Button from "../../components/ui/Button";
+import { uploadMedia } from "../../api/upload";
 import {
   FaUsers,
   FaNewspaper,
@@ -17,11 +18,16 @@ import {
   FaStar,
   FaEye,
   FaEyeSlash,
-  FaStarHalfAlt,
   FaEdit,
   FaPlus,
   FaTag,
+  FaMapMarkerAlt,
+  FaUpload,
+  FaInfoCircle,
+  FaFlag,
 } from "react-icons/fa";
+import AdminReportsPage from "./AdminReportsPage";
+import BrandingEditor from "./BrandingEditor";
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -35,6 +41,7 @@ export default function AdminPage() {
   const [restaurants, setRestaurants] = useState([]);
   const [eatingPlans, setEatingPlans] = useState([]);
   const [chatRooms, setChatRooms] = useState([]);
+  const [pendingChatRooms, setPendingChatRooms] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [banners, setBanners] = useState([]);
 
@@ -63,12 +70,108 @@ export default function AdminPage() {
     area: "",
     price_range: "",
     address: "",
+    description: "",
     meal_time: "all",
     latitude: "",
     longitude: "",
     image_url: "",
+    media: [], // danh sách URL ảnh (tối đa 10)
     is_featured: false,
   });
+
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Helper to handle image upload from machine
+  async function handleImageUpload(file, type) {
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const res = await uploadMedia([file]);
+      if (res && res[0]?.url) {
+        if (type === "restaurant") {
+          setRestaurantForm(prev => ({ 
+            ...prev, 
+            image_url: res[0].url,
+            media: [...(prev.media || []), res[0].url].slice(0, 10)
+          }));
+        } else if (type === "banner") {
+          setBannerForm(prev => ({ ...prev, image_url: res[0].url }));
+        }
+      }
+    } catch (e) {
+      alert("Upload ảnh thất bại");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  // Handle multiple images upload
+  async function handleMultipleImagesUpload(files) {
+    if (!files || files.length === 0) return;
+    
+    const currentMediaCount = restaurantForm.media?.length || 0;
+    const remainingSlots = 10 - currentMediaCount;
+    
+    if (remainingSlots <= 0) {
+      alert("Đã đạt giới hạn tối đa 10 ảnh");
+      return;
+    }
+
+    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+    
+    setUploadingImage(true);
+    try {
+      const results = await uploadMedia(filesToUpload);
+      if (results && results.length > 0) {
+        const newUrls = results.map(r => r.url);
+        setRestaurantForm(prev => {
+          const updatedMedia = [...(prev.media || []), ...newUrls].slice(0, 10);
+          return {
+            ...prev,
+            media: updatedMedia,
+            // Nếu chưa có ảnh đại diện thì lấy ảnh đầu tiên vừa up
+            image_url: prev.image_url || updatedMedia[0]
+          };
+        });
+      }
+    } catch (e) {
+      alert("Upload danh sách ảnh thất bại");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  function removeRestaurantMedia(index) {
+    setRestaurantForm(prev => {
+      const updatedMedia = prev.media.filter((_, i) => i !== index);
+      return {
+        ...prev,
+        media: updatedMedia,
+        // Nếu ảnh bị xóa đang là image_url chính thì cập nhật lại cover
+        image_url: prev.image_url === prev.media[index] ? (updatedMedia[0] || "") : prev.image_url
+      };
+    });
+  }
+
+  // Geolocation helper
+  function getCurrentLocation() {
+    if (!navigator.geolocation) {
+      alert("Trình duyệt của bạn không hỗ trợ định vị");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setRestaurantForm(prev => ({
+          ...prev,
+          latitude: pos.coords.latitude.toFixed(6),
+          longitude: pos.coords.longitude.toFixed(6)
+        }));
+      },
+      () => {
+        alert("Không thể lấy vị trí hiện tại. Vui lòng kiểm tra quyền truy cập vị trí.");
+      }
+    );
+  }
 
   // Load stats
   async function loadStats() {
@@ -149,8 +252,12 @@ export default function AdminPage() {
     setLoading(true);
     setErr("");
     try {
-      const res = await http.get("/api/admin/chat-rooms");
-      setChatRooms(res.data);
+      const [activeRes, pendingRes] = await Promise.all([
+        http.get("/api/admin/chat-rooms", { params: { status: "active" } }),
+        http.get("/api/admin/chat-rooms", { params: { status: "pending" } }),
+      ]);
+      setChatRooms(activeRes.data || []);
+      setPendingChatRooms(pendingRes.data || []);
     } catch (e) {
       setErr(e?.response?.data?.msg || "Không tải được danh sách phòng chat");
     } finally {
@@ -250,6 +357,15 @@ export default function AdminPage() {
   }
 
   // Chat room actions
+  async function updateChatRoomStatus(roomId, status) {
+    try {
+      await http.patch(`/api/admin/chat-rooms/${roomId}/status`, { status });
+      await loadChatRooms();
+    } catch (e) {
+      setErr(e?.response?.data?.msg || "Cập nhật trạng thái thất bại");
+    }
+  }
+
   async function deleteChatRoom(roomId) {
     if (!confirm("Bạn có chắc muốn xóa phòng chat này?")) return;
     try {
@@ -345,10 +461,12 @@ export default function AdminPage() {
         area: restaurant.area || "",
         price_range: restaurant.price_range || "",
         address: restaurant.address || "",
+        description: restaurant.description || "",
         meal_time: restaurant.meal_time || "all",
         latitude: restaurant.latitude || "",
         longitude: restaurant.longitude || "",
         image_url: restaurant.image_url || "",
+        media: [],
         is_featured: restaurant.is_featured || false,
       });
     } else {
@@ -371,11 +489,17 @@ export default function AdminPage() {
 
   async function saveRestaurant() {
     try {
+      // Đợi state image_url cập nhật sau upload (tránh trường hợp user vừa chọn ảnh xong bấm Lưu ngay)
       const data = {
         ...restaurantForm,
         latitude: restaurantForm.latitude ? parseFloat(restaurantForm.latitude) : null,
         longitude: restaurantForm.longitude ? parseFloat(restaurantForm.longitude) : null,
       };
+
+      if (!data.image_url && uploadingImage) {
+        setErr("Ảnh đang upload, vui lòng chờ...");
+        return;
+      }
 
       if (editingRestaurant) {
         await http.put(`/api/admin/restaurants/${editingRestaurant.id}`, data);
@@ -471,6 +595,7 @@ export default function AdminPage() {
     { id: "settings", label: "Branding", icon: FaEdit },
     { id: "eating-plans", label: "Kèo ăn", icon: FaCalendarAlt },
     { id: "chat", label: "Chat", icon: FaComments },
+    { id: "reports", label: "Báo cáo", icon: FaFlag },
   ];
 
   return (
@@ -500,82 +625,94 @@ export default function AdminPage() {
 
         {err && <div className="err" style={{ marginTop: 12 }}>{err}</div>}
 
-        {activeTab === "dashboard" && (
+        {/* Tab Báo cáo */}
+        {activeTab === "reports" && <AdminReportsPage />}
+
+        {/* Tab Dashboard */}
+        {activeTab === "dashboard" && stats && (
           <div className="admin-dashboard">
-            {stats && (
-              <>
-                <div className="stats-grid">
-                  <div className="stat-card">
-                    <FaUsers className="stat-icon" />
-                    <div className="stat-content">
-                      <div className="stat-value">{stats.users?.total || 0}</div>
-                      <div className="stat-label">Người dùng</div>
-                      <div className="stat-detail">
-                        {stats.users?.admins || 0} admin, {stats.users?.locked || 0} bị khóa
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="stat-card">
-                    <FaNewspaper className="stat-icon" />
-                    <div className="stat-content">
-                      <div className="stat-value">{stats.posts?.total || 0}</div>
-                      <div className="stat-label">Bài viết</div>
-                      <div className="stat-detail">
-                        {stats.posts?.pending || 0} chờ duyệt, {stats.posts?.hidden || 0} ẩn
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="stat-card">
-                    <FaStar className="stat-icon" />
-                    <div className="stat-content">
-                      <div className="stat-value">{stats.reviews?.total || 0}</div>
-                      <div className="stat-label">Đánh giá</div>
-                      <div className="stat-detail">
-                        {stats.reviews?.pending || 0} chờ duyệt, {stats.reviews?.approved || 0} đã duyệt
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="stat-card">
-                    <FaUtensils className="stat-icon" />
-                    <div className="stat-content">
-                      <div className="stat-value">{stats.restaurants?.total || 0}</div>
-                      <div className="stat-label">Quán ăn</div>
-                      <div className="stat-detail">
-                        {stats.restaurants?.featured || 0} nổi bật
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="stat-card">
-                    <FaCalendarAlt className="stat-icon" />
-                    <div className="stat-content">
-                      <div className="stat-value">{stats.eatingPlans?.total || 0}</div>
-                      <div className="stat-label">Kèo ăn</div>
-                      <div className="stat-detail">
-                        {stats.eatingPlans?.open || 0} đang mở
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="stat-card">
-                    <FaComments className="stat-icon" />
-                    <div className="stat-content">
-                      <div className="stat-value">{stats.chat?.total_rooms || 0}</div>
-                      <div className="stat-label">Phòng chat</div>
-                      <div className="stat-detail">
-                        {stats.chat?.total_messages || 0} tin nhắn
-                      </div>
-                    </div>
+            <div className="stats-grid">
+              <div className="stat-card">
+                <FaUsers className="stat-icon" />
+                <div className="stat-content">
+                  <div className="stat-value">{stats.users?.total || 0}</div>
+                  <div className="stat-label">Người dùng</div>
+                  <div className="stat-detail">
+                    {stats.users?.admins || 0} admin, {stats.users?.locked || 0} bị khóa
                   </div>
                 </div>
-              </>
-            )}
+              </div>
+
+              <div className="stat-card">
+                <FaNewspaper className="stat-icon" />
+                <div className="stat-content">
+                  <div className="stat-value">{stats.posts?.total || 0}</div>
+                  <div className="stat-label">Bài viết</div>
+                  <div className="stat-detail">
+                    {stats.posts?.pending || 0} chờ duyệt, {stats.posts?.hidden || 0} ẩn
+                  </div>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <FaStar className="stat-icon" />
+                <div className="stat-content">
+                  <div className="stat-value">{stats.reviews?.total || 0}</div>
+                  <div className="stat-label">Đánh giá</div>
+                  <div className="stat-detail">
+                    {stats.reviews?.pending || 0} chờ duyệt, {stats.reviews?.approved || 0} đã duyệt
+                  </div>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <FaUtensils className="stat-icon" />
+                <div className="stat-content">
+                  <div className="stat-value">{stats.restaurants?.total || 0}</div>
+                  <div className="stat-label">Quán ăn</div>
+                  <div className="stat-detail">
+                    {stats.restaurants?.featured || 0} nổi bật
+                  </div>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <FaCalendarAlt className="stat-icon" />
+                <div className="stat-content">
+                  <div className="stat-value">{stats.eatingPlans?.total || 0}</div>
+                  <div className="stat-label">Kèo ăn</div>
+                  <div className="stat-detail">
+                    {stats.eatingPlans?.open || 0} đang mở
+                  </div>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <FaComments className="stat-icon" />
+                <div className="stat-content">
+                  <div className="stat-value">{stats.chat?.total_rooms || 0}</div>
+                  <div className="stat-label">Phòng chat</div>
+                  <div className="stat-detail">
+                    {stats.chat?.total_messages || 0} tin nhắn
+                  </div>
+                </div>
+              </div>
+
+              <div className="stat-card" onClick={() => setActiveTab("reports")} style={{ cursor: 'pointer' }}>
+                <FaFlag className="stat-icon" />
+                <div className="stat-content">
+                  <div className="stat-value">{stats.reports?.total || 0}</div>
+                  <div className="stat-label">Báo cáo</div>
+                  <div className="stat-detail">
+                    {stats.reports?.pending || 0} chờ xử lý
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
+        {/* Tab Posts */}
         {activeTab === "posts" && (
           <div className="admin-content">
             <div className="admin-actions">
@@ -634,6 +771,7 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Tab Users */}
         {activeTab === "users" && (
           <div className="admin-content">
             <div className="admin-actions">
@@ -689,6 +827,7 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Tab Reviews */}
         {activeTab === "reviews" && (
           <div className="admin-content">
             <div className="admin-actions">
@@ -761,6 +900,7 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Tab Restaurants */}
         {activeTab === "restaurants" && (
           <div className="admin-content">
             <div className="admin-actions">
@@ -808,162 +948,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {showRestaurantForm && (
-          <div className="modal-backdrop" onClick={() => setShowRestaurantForm(false)}>
-            <div
-              className="modal-content"
-              onClick={(e) => e.stopPropagation()}
-              style={{ maxWidth: 600, maxHeight: "90vh", overflowY: "auto" }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                <h2>{editingRestaurant ? "Sửa quán ăn" : "Thêm quán ăn mới"}</h2>
-                <Button variant="ghost" size="sm" onClick={() => setShowRestaurantForm(false)} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer" }}>
-                  ×
-                </Button>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Tên quán *</label>
-                  <input
-                    type="text"
-                    value={restaurantForm.name}
-                    onChange={(e) => setRestaurantForm({ ...restaurantForm, name: e.target.value })}
-                    style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
-                    required
-                  />
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                  <div>
-                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Loại</label>
-                    <input
-                      type="text"
-                      value={restaurantForm.type}
-                      onChange={(e) => setRestaurantForm({ ...restaurantForm, type: e.target.value })}
-                      style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
-                      placeholder="Ví dụ: Mì Quảng"
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Khu vực</label>
-                    <input
-                      type="text"
-                      value={restaurantForm.area}
-                      onChange={(e) => setRestaurantForm({ ...restaurantForm, area: e.target.value })}
-                      style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
-                      placeholder="Ví dụ: Hải Châu"
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                  <div>
-                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Giá</label>
-                    <select
-                      value={restaurantForm.price_range}
-                      onChange={(e) => setRestaurantForm({ ...restaurantForm, price_range: e.target.value })}
-                      style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
-                    >
-                      <option value="">Chọn mức giá</option>
-                      <option value="Dưới 30k">Dưới 30k</option>
-                      <option value="30-50k">30-50k</option>
-                      <option value="50-100k">50-100k</option>
-                      <option value="100-200k">100-200k</option>
-                      <option value="200k+">200k+</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Thời gian</label>
-                    <select
-                      value={restaurantForm.meal_time}
-                      onChange={(e) => setRestaurantForm({ ...restaurantForm, meal_time: e.target.value })}
-                      style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
-                    >
-                      <option value="all">Tất cả</option>
-                      <option value="sang">Sáng</option>
-                      <option value="trua">Trưa</option>
-                      <option value="toi">Tối</option>
-                      <option value="vat">Ăn vặt</option>
-                      <option value="henho">Hẹn hò</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Địa chỉ</label>
-                  <input
-                    type="text"
-                    value={restaurantForm.address}
-                    onChange={(e) => setRestaurantForm({ ...restaurantForm, address: e.target.value })}
-                    style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
-                    placeholder="Ví dụ: 123 Lê Duẩn, Hải Châu, Đà Nẵng"
-                  />
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                  <div>
-                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Vĩ độ</label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={restaurantForm.latitude}
-                      onChange={(e) => setRestaurantForm({ ...restaurantForm, latitude: e.target.value })}
-                      style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
-                      placeholder="16.0689"
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Kinh độ</label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={restaurantForm.longitude}
-                      onChange={(e) => setRestaurantForm({ ...restaurantForm, longitude: e.target.value })}
-                      style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
-                      placeholder="108.2221"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>URL ảnh</label>
-                  <input
-                    type="url"
-                    value={restaurantForm.image_url}
-                    onChange={(e) => setRestaurantForm({ ...restaurantForm, image_url: e.target.value })}
-                    style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
-                    placeholder="https://..."
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                    <input
-                      type="checkbox"
-                      checked={restaurantForm.is_featured}
-                      onChange={(e) => setRestaurantForm({ ...restaurantForm, is_featured: e.target.checked })}
-                    />
-                    <span>Đánh dấu nổi bật</span>
-                  </label>
-                </div>
-
-                <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
-                  <Button onClick={() => setShowRestaurantForm(false)} variant="secondary" size="sm">
-                    Hủy
-                  </Button>
-                  <Button onClick={saveRestaurant} variant="primary" size="md">
-                    {editingRestaurant ? "Cập nhật" : "Thêm mới"}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
+        {/* Tab Banners */}
         {activeTab === "banners" && (
           <div className="admin-content">
             <div className="admin-actions">
@@ -1023,6 +1008,7 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Tab Branding */}
         {activeTab === "settings" && (
           <div className="admin-content">
             <div className="admin-actions">
@@ -1031,152 +1017,11 @@ export default function AdminPage() {
                 alert(stored ? "Hiện cấu hình brand: " + stored : "Chưa có cấu hình brand");
               }}>Xem cấu hình hiện tại</Button>
             </div>
-
             <BrandingEditor />
           </div>
         )}
 
-        {/* Banner Form Modal */}
-        {showBannerForm && (
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: "rgba(0,0,0,0.5)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 1000,
-            }}
-            onClick={() => setShowBannerForm(false)}
-          >
-            <div
-              style={{
-                background: "white",
-                borderRadius: 16,
-                padding: 24,
-                maxWidth: 600,
-                width: "90%",
-                maxHeight: "90vh",
-                overflow: "auto",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 style={{ marginTop: 0 }}>{editingBanner ? "Sửa banner" : "Thêm banner mới"}</h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Tiêu đề *</label>
-                  <input
-                    type="text"
-                    value={bannerForm.title}
-                    onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
-                    style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
-                    placeholder="VD: Giảm 20% hôm nay"
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Mô tả</label>
-                  <textarea
-                    value={bannerForm.description}
-                    onChange={(e) => setBannerForm({ ...bannerForm, description: e.target.value })}
-                    style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8, minHeight: 80 }}
-                    placeholder="Mô tả chi tiết về khuyến mãi/booking..."
-                  />
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                  <div>
-                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Loại</label>
-                    <select
-                      value={bannerForm.banner_type}
-                      onChange={(e) => setBannerForm({ ...bannerForm, banner_type: e.target.value })}
-                      style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
-                    >
-                      <option value="promotion">Khuyến mãi</option>
-                      <option value="booking">Nhận booking</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Thứ tự hiển thị</label>
-                    <input
-                      type="number"
-                      value={bannerForm.sort_order}
-                      onChange={(e) => setBannerForm({ ...bannerForm, sort_order: parseInt(e.target.value) || 0 })}
-                      style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Ảnh banner (URL)</label>
-                  <input
-                    type="url"
-                    value={bannerForm.image_url}
-                    onChange={(e) => setBannerForm({ ...bannerForm, image_url: e.target.value })}
-                    style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
-                    placeholder="https://example.com/banner.jpg"
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Link khi click (URL, tùy chọn)</label>
-                  <input
-                    type="url"
-                    value={bannerForm.link_url}
-                    onChange={(e) => setBannerForm({ ...bannerForm, link_url: e.target.value })}
-                    style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
-                    placeholder="https://example.com hoặc để trống sẽ link đến trang quán"
-                  />
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                  <div>
-                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Ngày bắt đầu</label>
-                    <input
-                      type="datetime-local"
-                      value={bannerForm.start_date}
-                      onChange={(e) => setBannerForm({ ...bannerForm, start_date: e.target.value })}
-                      style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Ngày kết thúc</label>
-                    <input
-                      type="datetime-local"
-                      value={bannerForm.end_date}
-                      onChange={(e) => setBannerForm({ ...bannerForm, end_date: e.target.value })}
-                      style={{ width: "100%", padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <input
-                      type="checkbox"
-                      checked={bannerForm.is_active}
-                      onChange={(e) => setBannerForm({ ...bannerForm, is_active: e.target.checked })}
-                    />
-                    <span>Hiển thị banner</span>
-                  </label>
-                </div>
-
-                <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
-                  <Button onClick={() => setShowBannerForm(false)} variant="secondary" size="sm">Hủy</Button>
-                  <Button onClick={saveBanner} variant="primary" size="md">{editingBanner ? "Cập nhật" : "Thêm mới"}</Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
+        {/* Tab Eating Plans */}
         {activeTab === "eating-plans" && (
           <div className="admin-content">
             <div className="admin-actions">
@@ -1217,6 +1062,7 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Tab Chat */}
         {activeTab === "chat" && (
           <div className="admin-content">
             <div className="admin-actions">
@@ -1226,6 +1072,44 @@ export default function AdminPage() {
               <div>Đang tải...</div>
             ) : (
               <div className="admin-list">
+                {/* Pending rooms */}
+                {pendingChatRooms.length > 0 && (
+                  <div style={{ marginBottom: 24 }}>
+                    <h3 style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 900 }}>
+                      Phòng chờ duyệt ({pendingChatRooms.length})
+                    </h3>
+                    {pendingChatRooms.map((room) => (
+                      <div key={room.id} className="admin-item" style={{ borderLeft: "4px solid var(--primary)" }}>
+                        <div className="admin-item-header">
+                          <div>
+                            <strong>{room.name}</strong>
+                            <div className="admin-meta">
+                              {room.creator_name} • {room.message_count || 0} tin nhắn
+                            </div>
+                          </div>
+                          <div className="admin-badges">
+                            <span className="badge badge-pending">pending</span>
+                          </div>
+                        </div>
+                        {room.description && <p>{room.description}</p>}
+                        <div className="admin-item-footer">
+                          <span>
+                            ID: {room.id} • {new Date(room.created_at).toLocaleString()}
+                          </span>
+                          <div className="admin-actions-group">
+                            <Button onClick={() => updateChatRoomStatus(room.id, "active")} variant="success" size="sm"><FaCheck /> Duyệt</Button>
+                            <Button onClick={() => updateChatRoomStatus(room.id, "rejected")} variant="secondary" size="sm"><FaTimes /> Từ chối</Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <h3 style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 900 }}>
+                  Phòng đang hoạt động ({chatRooms.length})
+                </h3>
+
                 {chatRooms.map((room) => (
                   <div key={room.id} className="admin-item">
                     <div className="admin-item-header">
@@ -1250,12 +1134,137 @@ export default function AdminPage() {
                     </div>
                   </div>
                 ))}
-                {chatRooms.length === 0 && <div className="empty-state">Không có phòng chat nào</div>}
+
+                {chatRooms.length === 0 && pendingChatRooms.length === 0 && (
+                  <div className="empty-state">Không có phòng chat nào</div>
+                )}
               </div>
             )}
           </div>
         )}
       </div>
+
+      {/* Restaurant Form Modal */}
+      {showRestaurantForm && (
+        <RestaurantFormModal
+          show={showRestaurantForm}
+          onClose={() => setShowRestaurantForm(false)}
+          restaurant={editingRestaurant}
+          onSave={saveRestaurant}
+          uploadingImage={uploadingImage}
+          handleMultipleImagesUpload={handleMultipleImagesUpload}
+          removeRestaurantMedia={removeRestaurantMedia}
+        />
+      )}
+
+      {/* Banner Form Modal */}
+      {showBannerForm && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setShowBannerForm(false)}
+        >
+          <div
+            className="modal-content"
+            style={{ maxWidth: 700, width: "95%", maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 24px", borderBottom: "1px solid var(--border)" }}>
+              <h2 style={{ margin: 0, fontSize: 20 }}>{editingBanner ? "Sửa banner" : "Thêm banner mới"}</h2>
+              <button 
+                onClick={() => setShowBannerForm(false)} 
+                style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "var(--muted)" }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div style={{ padding: 24, overflowY: "auto", display: "flex", flexDirection: "column", gap: 20 }}>
+              <div>
+                <label className="form-label">Tiêu đề *</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={bannerForm.title}
+                  onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
+                  placeholder="VD: Giảm 20% hôm nay"
+                />
+              </div>
+              <div>
+                <label className="form-label">Mô tả</label>
+                <textarea
+                  className="form-textarea"
+                  value={bannerForm.description}
+                  onChange={(e) => setBannerForm({ ...bannerForm, description: e.target.value })}
+                  style={{ minHeight: 80 }}
+                  placeholder="Mô tả chi tiết về khuyến mãi/booking..."
+                />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <label className="form-label">Loại</label>
+                  <select
+                    className="form-input"
+                    value={bannerForm.banner_type}
+                    onChange={(e) => setBannerForm({ ...bannerForm, banner_type: e.target.value })}
+                  >
+                    <option value="promotion">Khuyến mãi</option>
+                    <option value="booking">Nhận booking</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label">Thứ tự hiển thị</label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={bannerForm.sort_order}
+                    onChange={(e) => setBannerForm({ ...bannerForm, sort_order: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="form-label">Ảnh banner</label>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {bannerForm.image_url && (
+                    <div style={{ position: "relative", width: "100%", height: 180, borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)" }}>
+                      <img src={bannerForm.image_url} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <button 
+                        onClick={() => setBannerForm({ ...bannerForm, image_url: "" })}
+                        style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", color: "white", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  )}
+                  <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", border: "2px dashed var(--border)", borderRadius: 12, cursor: "pointer", background: uploadingImage ? "rgba(0,0,0,0.02)" : "#fafafa" }}>
+                    <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleImageUpload(e.target.files[0], "banner")} disabled={uploadingImage} />
+                    <FaUpload size={24} color="var(--muted)" style={{ marginBottom: 8 }} />
+                    <span>{uploadingImage ? "Đang tải..." : "Bấm chọn ảnh từ máy"}</span>
+                  </label>
+                  <input type="url" className="form-input" value={bannerForm.image_url} onChange={(e) => setBannerForm({ ...bannerForm, image_url: e.target.value })} placeholder="Hoặc nhập URL ảnh..." />
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <label className="form-label">Ngày bắt đầu</label>
+                  <input type="datetime-local" className="form-input" value={bannerForm.start_date} onChange={(e) => setBannerForm({ ...bannerForm, start_date: e.target.value })} />
+                </div>
+                <div>
+                  <label className="form-label">Ngày kết thúc</label>
+                  <input type="datetime-local" className="form-input" value={bannerForm.end_date} onChange={(e) => setBannerForm({ ...bannerForm, end_date: e.target.value })} />
+                </div>
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                <input type="checkbox" checked={bannerForm.is_active} onChange={(e) => setBannerForm({ ...bannerForm, is_active: e.target.checked })} />
+                <span className="form-label" style={{ marginBottom: 0 }}>Kích hoạt hiển thị</span>
+              </label>
+              <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 12, paddingTop: 20, borderTop: "1px solid var(--border)" }}>
+                <Button onClick={() => setShowBannerForm(false)} variant="secondary" size="md">Hủy bỏ</Button>
+                <Button onClick={saveBanner} variant="primary" size="md" disabled={uploadingImage}>{editingBanner ? "Cập nhật" : "Thêm mới"}</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }

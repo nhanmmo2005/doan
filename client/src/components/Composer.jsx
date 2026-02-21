@@ -2,12 +2,23 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { uploadMedia } from "../api/upload";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faPhotoFilm,
+  faImage,
   faTriangleExclamation,
   faUtensils,
   faPaperPlane,
 } from "@fortawesome/free-solid-svg-icons";
 import Button from "./ui/Button";
+import { getUser } from "../auth";
+import { http } from "../api/http";
+
+function resolveAvatarUrl(url) {
+  if (!url) return null;
+  // absolute URL (http(s) / data: / blob:)
+  if (/^(https?:)?\/\//i.test(url) || url.startsWith("data:") || url.startsWith("blob:")) return url;
+  // relative path -> join with API baseURL
+  const base = http.defaults.baseURL || "";
+  return `${String(base).replace(/\/$/, "")}${url.startsWith("/") ? "" : "/"}${url}`;
+}
 
 const MAX_FILES = 10;
 
@@ -176,7 +187,22 @@ export default function Composer({ restaurants, onSubmit, loading }) {
         {/* Removed optional restaurant tag per request */}
 
         <div className="composer-row">
-          <div className="avatar">U</div>
+          <div className="avatar">
+            {(() => {
+              const me = getUser();
+              const url = resolveAvatarUrl(me?.avatar_url);
+              if (url) {
+                return (
+                  <img
+                    src={url}
+                    alt={me?.name || "User"}
+                    style={{ width: "100%", height: "100%", borderRadius: "999px", objectFit: "cover" }}
+                  />
+                );
+              }
+              return (me?.name?.trim()?.[0] || "U").toUpperCase();
+            })()}
+          </div>
 
           <div className="composer-input">
             <textarea
@@ -202,9 +228,15 @@ export default function Composer({ restaurants, onSubmit, loading }) {
               multiple
               onChange={(e) => addFiles(e.target.files)}
             />
-            <button type="button" className="btn-chip" onClick={pickFiles}>
-              <FontAwesomeIcon icon={faPhotoFilm} />
-              <span>Ảnh/Video</span>
+            <button
+              type="button"
+              className="btn-chip"
+              onClick={pickFiles}
+              title="Đính kèm một ảnh hoặc video"
+              aria-label="Đính kèm một ảnh hoặc video"
+              style={{ padding: 8, width: 40, height: 40, borderRadius: 999, justifyContent: "center" }}
+            >
+              <FontAwesomeIcon icon={faImage} />
             </button>
 
             {/* profanity hint removed per request */}

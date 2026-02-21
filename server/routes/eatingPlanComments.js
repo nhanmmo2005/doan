@@ -36,26 +36,8 @@ router.get("/:planId/comments", async (req, res) => {
       comments = [];
     }
 
-    // Build tree structure (same as post comments)
-    const map = new Map();
-    const roots = [];
-
-    for (const c of comments) {
-      map.set(c.id, { ...c, replies: [] });
-    }
-
-    for (const c of comments) {
-      const node = map.get(c.id);
-      if (c.parent_id) {
-        const parent = map.get(c.parent_id);
-        if (parent) parent.replies.push(node);
-        else roots.push(node);
-      } else {
-        roots.push(node);
-      }
-    }
-
-    res.json(roots);
+    // Return flat list of comments
+    res.json(comments);
   } catch (e) {
     console.error("GET COMMENTS ERROR:", e);
     res.status(500).json({ msg: "Server error" });

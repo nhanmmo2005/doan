@@ -1,6 +1,6 @@
 // client/src/pages/ChatPage.jsx
-import { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { Link, useLocation } from "react-router-dom";
 import AppLayout from "../components/AppLayout";
 import Lightbox from "../components/Lightbox";
 import { http } from "../api/http";
@@ -13,8 +13,10 @@ import {
   FaTrash,
   FaPlus,
   FaEllipsisV,
+  FaFlag,
 } from "react-icons/fa";
 import Button from "../components/ui/Button";
+import ReportModal from "../components/ReportModal";
 
 function fmtTime(ts) {
   try {
@@ -68,14 +70,18 @@ function ChatRoomListItem({ room, isActive, onClick }) {
   );
 }
 
-function ChatMessage({ message, onDelete, canDelete, onImageClick }) {
+function ChatMessage({ message, onDelete, canDelete, onImageClick, isFocused }) {
   const me = getUser();
   const isMe = me && me.id === message.user_id;
   const avatarChar = (message.author_name?.[0] || "U").toUpperCase();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   return (
-    <div className={`chat-message ${isMe ? "chat-message-me" : ""}`}>
+    <div 
+      id={`msg-${message.id}`} 
+      className={`chat-message ${isMe ? "chat-message-me" : ""} ${isFocused ? "focused-highlight" : ""}`}
+    >
       {!isMe && (
         <Link to={`/users/${message.user_id}`} className="chat-avatar" title={message.author_name}>
           {message.author_avatar ? (
@@ -88,7 +94,15 @@ function ChatMessage({ message, onDelete, canDelete, onImageClick }) {
 
       <div className="chat-message-content">
         {!isMe && (
-          <div className="chat-message-author">{message.author_name}</div>
+          <div className="chat-message-author">
+            {message.author_name}
+            {isFocused && <span className="focus-badge">Nội dung bị báo cáo</span>}
+          </div>
+        )}
+        {isMe && isFocused && (
+          <div className="chat-message-author" style={{ textAlign: 'right' }}>
+            <span className="focus-badge">Nội dung bị báo cáo</span>
+          </div>
         )}
 
         <div className="chat-message-bubble">
@@ -112,7 +126,7 @@ function ChatMessage({ message, onDelete, canDelete, onImageClick }) {
           <div className="chat-message-time">{fmtTime(message.created_at)}</div>
         </div>
 
-        {canDelete && (
+        {((me && me.id !== message.user_id) || canDelete) && (
           <div className="chat-message-ellipsis">
             <button
               type="button"
@@ -127,29 +141,56 @@ function ChatMessage({ message, onDelete, canDelete, onImageClick }) {
               <>
                 <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
                 <div className="menu" style={{ right: 0, left: "auto" }}>
-          <button
-            type="button"
-                    className="menuItem danger"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onDelete(message.id);
-                    }}
-                  >
-                    <span className="menuIcon"><FaTrash /></span>
-                    <span>Xoá tin nhắn</span>
-          </button>
+                  {canDelete && (
+                    <button
+                      type="button"
+                      className="menuItem danger"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onDelete(message.id);
+                      }}
+                    >
+                      <span className="menuIcon"><FaTrash /></span>
+                      <span>Xoá tin nhắn</span>
+                    </button>
+                  )}
+                  {me && me.id !== message.user_id && (
+                    <button
+                      type="button"
+                      className="menuItem"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setShowReport(true);
+                      }}
+                    >
+                      <span className="menuIcon"><FaFlag /></span>
+                      <span>Báo cáo</span>
+                    </button>
+                  )}
                 </div>
               </>
             )}
           </div>
         )}
       </div>
+
+      {showReport && (
+        <ReportModal
+          targetType="message"
+          targetId={message.id}
+          onClose={() => setShowReport(false)}
+        />
+      )}
     </div>
   );
 }
 
 function ChatWindow({ roomId, onRoomChange }) {
   const me = getUser();
+  const loc = useLocation();
+  const search = useMemo(() => new URLSearchParams(loc.search), [loc.search]);
+  const focusMessageId = search.get("focus_message");
+
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -161,48 +202,72 @@ function ChatWindow({ roomId, onRoomChange }) {
   const [lightboxImage, setLightboxImage] = useState("");
 
   const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
   const fileInputRef = useRef(null);
   const pollingIntervalRef = useRef(null);
+  const isInitialLoad = useRef(true);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (force = false) => {
+    if (!chatContainerRef.current) return;
+    
+    // Nếu force=true hoặc user đang ở gần đáy (trong khoảng 150px)
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+    
+    if (force || isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: force ? "auto" : "smooth" });
+    }
+  };
+
+  const scrollToMessage = (id) => {
+    const el = document.getElementById(`msg-${id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("highlight-flash");
+      setTimeout(() => el.classList.remove("highlight-flash"), 3000);
+    }
   };
 
   async function loadMessages() {
     if (!roomId) return;
-    setErr("");
     try {
-      setLoading(true);
+      if (isInitialLoad.current) setLoading(true);
       const res = await http.get(`/api/chat/rooms/${roomId}/messages`);
-      setMessages(res.data || []);
-      setTimeout(scrollToBottom, 100);
+      const newMessages = res.data || [];
+      
+      setMessages(newMessages);
+
+      if (isInitialLoad.current) {
+        setLoading(false);
+        isInitialLoad.current = false;
+        
+        // Sau khi load lần đầu, nếu có focus_message thì nhảy tới đó, không thì xuống đáy
+        setTimeout(() => {
+          if (focusMessageId) {
+            scrollToMessage(focusMessageId);
+          } else {
+            scrollToBottom(true);
+          }
+        }, 120);
+      } else {
+        // Các lần poll sau, chỉ cuộn nếu đang ở đáy
+        scrollToBottom();
+      }
     } catch (e) {
       setErr(e?.response?.data?.msg || "Tải tin nhắn thất bại");
-    } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
     if (roomId) {
+      isInitialLoad.current = true;
       loadMessages();
       
-      // Poll for new messages every 3 seconds
-      pollingIntervalRef.current = setInterval(() => {
-        loadMessages();
-      }, 3000);
-
-      return () => {
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current);
-        }
-      };
+      pollingIntervalRef.current = setInterval(loadMessages, 3000);
+      return () => clearInterval(pollingIntervalRef.current);
     }
   }, [roomId]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   async function handleSend(e) {
     e.preventDefault();
@@ -233,6 +298,8 @@ function ChatWindow({ roomId, onRoomChange }) {
       setMediaFile(null);
       setMediaPreview(null);
       await loadMessages();
+      // Force scroll to bottom when I send a message
+      setTimeout(() => scrollToBottom(true), 100);
     } catch (e) {
       setErr(e?.response?.data?.msg || "Gửi tin nhắn thất bại");
     } finally {
@@ -277,7 +344,7 @@ function ChatWindow({ roomId, onRoomChange }) {
     <div className="chat-window">
       {err && <div className="err" style={{ margin: 12 }}>{err}</div>}
 
-      <div className="chat-messages">
+      <div className="chat-messages" ref={chatContainerRef}>
         {loading && messages.length === 0 ? (
           <div className="chat-loading">Đang tải tin nhắn...</div>
         ) : messages.length === 0 ? (
@@ -289,6 +356,7 @@ function ChatWindow({ roomId, onRoomChange }) {
             <ChatMessage
               key={msg.id}
               message={msg}
+              isFocused={focusMessageId && String(msg.id) === String(focusMessageId)}
               onDelete={handleDelete}
               canDelete={me && (me.id === msg.user_id || me.role === "admin")}
               onImageClick={(url) => {
@@ -384,26 +452,34 @@ function ChatWindow({ roomId, onRoomChange }) {
 
 export default function ChatPage() {
   const me = getUser();
+  const loc = useLocation();
+  const search = useMemo(() => new URLSearchParams(loc.search), [loc.search]);
+  const roomFromUrl = search.get("room");
+
   const [rooms, setRooms] = useState([]);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [showCreateRoom, setShowCreateRoom] = useState(false);
 
-  useEffect(() => {
-    loadRooms();
-  }, []);
-
   async function loadRooms() {
     setErr("");
     try {
       setLoading(true);
       const res = await http.get("/api/chat/rooms");
-      setRooms(res.data || []);
+      const roomList = res.data || [];
+      setRooms(roomList);
       
-      // Auto-select first room if none selected
-      if (!selectedRoomId && res.data && res.data.length > 0) {
-        setSelectedRoomId(res.data[0].id);
+      // Ưu tiên chọn room từ URL
+      if (roomFromUrl) {
+        const found = roomList.find(r => r.id === Number(roomFromUrl));
+        if (found) {
+          setSelectedRoomId(found.id);
+        } else if (roomList.length > 0) {
+          setSelectedRoomId(roomList[0].id);
+        }
+      } else if (!selectedRoomId && roomList.length > 0) {
+        setSelectedRoomId(roomList[0].id);
       }
     } catch (e) {
       setErr(e?.response?.data?.msg || "Tải danh sách phòng chat thất bại");
@@ -412,10 +488,20 @@ export default function ChatPage() {
     }
   }
 
+  useEffect(() => {
+    loadRooms();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomFromUrl]);
+
   async function createRoom(payload) {
     try {
-      await http.post("/api/chat/rooms", payload);
-      await loadRooms();
+      const res = await http.post("/api/chat/rooms", payload);
+      if (res.data?.status === "pending") {
+        alert(res.data.msg || "Phòng chat đã được tạo và đang chờ admin duyệt.");
+      } else {
+        await loadRooms();
+        if (res.data?.id) setSelectedRoomId(res.data.id);
+      }
       setShowCreateRoom(false);
     } catch (e) {
       alert(e?.response?.data?.msg || "Tạo phòng chat thất bại");

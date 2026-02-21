@@ -5,6 +5,9 @@ import { createComment, deleteComment, fetchComments, updateComment } from "../a
 import { getUser } from "../auth";
 import Lightbox from "./Lightbox";
 import Button from "./ui/Button";
+import ReportModal from "./ReportModal";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faImage, faEllipsisV } from "@fortawesome/free-solid-svg-icons";
 
 const MAX_FILES = 8;
 
@@ -49,7 +52,8 @@ function MediaThumbs({ media }) {
           <div
             key={idx}
             className="cmt-media-item"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setLightboxIndex(idx);
               setLightboxOpen(true);
             }}
@@ -81,11 +85,13 @@ function MediaThumbs({ media }) {
 
 function ActionBtn({ children, danger, onClick }) {
   const className = danger ? "cmt-btn danger-text" : "cmt-btn";
-  const variant = danger ? "ghost" : "secondary";
   return (
-    <Button type="button" className={className} variant={variant} size="sm" onClick={onClick}>
+    <button type="button" className={className} onClick={(e) => {
+      e.stopPropagation();
+      onClick();
+    }}>
       {children}
-    </Button>
+    </button>
   );
 }
 
@@ -96,7 +102,16 @@ function CommentNode({
   onEdit,
   canManage,
 }) {
+  const [showReplies, setShowReplies] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const avatar = (node.author_name?.[0] || "U").toUpperCase();
+  const me = getUser();
+
+  const handleReplyClick = () => {
+    setShowReplies(true);
+    onReply(node);
+  };
 
   return (
     <div className="cmt-node">
@@ -114,6 +129,64 @@ function CommentNode({
             <div className="cmt-top">
               <div className="cmt-name truncate">{node.author_name || "User"}</div>
               <div className="cmt-time">{fmtTime(node.created_at)}</div>
+              <div className="cmt-more" style={{ marginLeft: "auto" }}>
+                <div className="menuWrap">
+                  <button
+                    type="button"
+                    className="btn-menu-trigger"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpen((x) => !x);
+                    }}
+                    style={{ fontSize: 12, opacity: 0.6 }}
+                  >
+                    <FontAwesomeIcon icon={faEllipsisV} />
+                  </button>
+                  {menuOpen && (
+                    <>
+                      <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
+                      <div className="menu" style={{ right: 0, left: "auto" }}>
+                        {canManage && (
+                          <>
+                            <button
+                              type="button"
+                              className="menuItem"
+                              onClick={() => {
+                                onEdit(node);
+                                setMenuOpen(false);
+                              }}
+                            >
+                              Sửa
+                            </button>
+                            <button
+                              type="button"
+                              className="menuItem danger"
+                              onClick={() => {
+                                onDelete(node.id);
+                                setMenuOpen(false);
+                              }}
+                            >
+                              Xóa
+                            </button>
+                          </>
+                        )}
+                        {me && me.id !== node.user_id && (
+                          <button
+                            type="button"
+                            className="menuItem"
+                            onClick={() => {
+                              setShowReport(true);
+                              setMenuOpen(false);
+                            }}
+                          >
+                            Báo cáo
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="cmt-text">{node.content}</div>
@@ -121,14 +194,28 @@ function CommentNode({
           </div>
 
           <div className="cmt-rowActions">
-            <ActionBtn onClick={() => onReply(node)}>Trả lời</ActionBtn>
-            {canManage && <ActionBtn onClick={() => onEdit(node)}>Sửa</ActionBtn>}
-            {canManage && <ActionBtn danger onClick={() => onDelete(node.id)}>Xoá</ActionBtn>}
+            <ActionBtn onClick={handleReplyClick}>Trả lời</ActionBtn>
           </div>
+
+          {node.replies?.length > 0 && (
+            <div style={{ marginTop: 4 }}>
+              <button 
+                type="button"
+                className="cmt-btn"
+                style={{ fontWeight: 600, color: "var(--primary)", fontSize: 13, background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowReplies(!showReplies);
+                }}
+              >
+                {showReplies ? "Ẩn phản hồi" : `Xem ${node.replies.length} phản hồi`}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {node.replies?.length ? (
+      {showReplies && node.replies?.length > 0 && (
         <div className="cmt-replies">
           {node.replies.map((r) => (
             <CommentTreeItem
@@ -140,7 +227,15 @@ function CommentNode({
             />
           ))}
         </div>
-      ) : null}
+      )}
+
+      {showReport && (
+        <ReportModal
+          targetType="post_comment"
+          targetId={node.id}
+          onClose={() => setShowReport(false)}
+        />
+      )}
     </div>
   );
 }
@@ -252,8 +347,6 @@ export default function CommentBox({ postId, inputRef }) {
       if (editing?.id) {
         await updateComment(editing.id, {
           content: text.trim(),
-          // nếu bạn muốn edit media luôn thì để dòng dưới:
-          // media,
         });
       } else {
         await createComment(postId, {
@@ -353,11 +446,21 @@ export default function CommentBox({ postId, inputRef }) {
               accept="image/*,video/*"
               onChange={(e) => addFiles(e.target.files)}
             />
-            <button type="button" className="chip" onClick={pickFiles} title="Thêm ảnh/video">
-              Thêm media
+            <button 
+              type="button" 
+              className="chip" 
+              onClick={(e) => {
+                e.stopPropagation();
+                pickFiles();
+              }} 
+              title="Đính kèm một ảnh hoặc video"
+              aria-label="Đính kèm một ảnh hoặc video"
+              style={{ padding: 8, width: 36, height: 36, borderRadius: "50%", display: "inline-flex", justifyContent: "center", alignItems: "center", border: "none", background: "rgba(0,0,0,0.05)", cursor: "pointer" }}
+            >
+              <FontAwesomeIcon icon={faImage} />
             </button>
 
-            <button className="primary" disabled={loading}>
+            <button className="primary" disabled={loading} style={{ border: "none", borderRadius: "8px", padding: "6px 16px", fontWeight: 600, cursor: "pointer" }}>
               {loading ? "Đang gửi…" : editing ? "Lưu" : "Gửi"}
             </button>
           </div>

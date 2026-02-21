@@ -1,11 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import AppLayout from "../components/AppLayout";
 import Composer from "../components/Composer";
 import FeedPostCard from "../components/FeedPostCard";
 import { http } from "../api/http";
 import { getUser } from "../auth";
+import HotList from "../components/HotList";
 
 export default function FeedPage() {
+  const loc = useLocation();
+  const search = useMemo(() => new URLSearchParams(loc.search), [loc.search]);
+  const focusComment = search.get("focus_comment");
+  const focusReviewComment = search.get("focus_review_comment");
+
   const [posts, setPosts] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
   const [loadingPost, setLoadingPost] = useState(false);
@@ -50,7 +57,7 @@ export default function FeedPage() {
   const user = getUser();
 
   return (
-    <AppLayout>
+    <AppLayout left={<HotList restaurants={restaurants} />}>
       <div className="feed-wrap col">
         {user ? <Composer restaurants={restaurants} onSubmit={createPost} loading={loadingPost} /> : null}
         {err && <div className="err">{err}</div>}

@@ -280,8 +280,17 @@ router.post("/:id/unfollow", auth, async (req, res) => {
 router.get("/:id/posts", optionalAuth, async (req, res) => {
   try {
     const userId = Number(req.params.id);
-    const limit = Math.min(Number(req.query.limit) || 20, 50);
+    // Default: return all posts for profile (for easy management / deleting).
+    // You can still paginate by passing limit & offset explicitly.
+    const limitRaw = req.query.limit;
     const offset = Number(req.query.offset) || 0;
+
+    // If limit is not provided -> return a large number to effectively fetch all.
+    // Hard cap to protect server.
+    const limit = Math.min(
+      Number(limitRaw === undefined ? 1000 : limitRaw) || 1000,
+      1000
+    );
 
     const [posts] = await pool.query(
       `
@@ -289,6 +298,7 @@ router.get("/:id/posts", optionalAuth, async (req, res) => {
         p.id, p.user_id, p.type, p.content, p.rating, p.created_at,
         p.restaurant_id, p.visibility,
         u.name AS author_name,
+        u.avatar_url AS author_avatar,
         r.name AS restaurant_name,
         r.area AS restaurant_area,
         (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id) AS like_count,
@@ -303,7 +313,43 @@ router.get("/:id/posts", optionalAuth, async (req, res) => {
       [userId, limit, offset]
     );
 
-    res.json(posts);
+    const ids = posts.map((p) => p.id);
+    let mediaByPost = new Map();
+    if (ids.length) {
+      const [mediaRows] = await pool.query(
+        `SELECT post_id, media_type AS mediaType, url, sort_order AS sortOrder
+         FROM post_media
+         WHERE post_id IN (${ids.map(() => "?").join(",")})
+         ORDER BY post_id ASC, sort_order ASC`,
+        ids
+      );
+      for (const m of mediaRows) {
+        if (!mediaByPost.has(m.post_id)) mediaByPost.set(m.post_id, []);
+        mediaByPost.get(m.post_id).push({
+          mediaType: m.mediaType,
+          url: m.url,
+          sortOrder: m.sortOrder,
+        });
+      }
+    }
+
+    // Check which posts are liked by current user
+    let likedPostIds = new Set();
+    if (req.user?.uid && ids.length) {
+      const [likedRows] = await pool.query(
+        `SELECT post_id FROM post_likes WHERE post_id IN (${ids.map(() => "?").join(",")}) AND user_id = ?`,
+        [...ids, req.user.uid]
+      );
+      likedRows.forEach((row) => likedPostIds.add(row.post_id));
+    }
+
+    res.json(
+      posts.map((p) => ({
+        ...p,
+        media: mediaByPost.get(p.id) || [],
+        is_liked: likedPostIds.has(p.id),
+      }))
+    );
   } catch (e) {
     console.error("GET USER POSTS ERROR:", e);
     res.status(500).json({ msg: "Server error" });

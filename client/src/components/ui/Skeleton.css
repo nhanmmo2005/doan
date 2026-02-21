@@ -1,0 +1,153 @@
+/* Skeleton Loading Components */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-text {
+  height: 16px;
+  margin-bottom: 8px;
+}
+
+.skeleton-text:last-child {
+  width: 60%;
+  margin-bottom: 0;
+}
+
+.skeleton-text-block .skeleton-text {
+  margin-bottom: 6px;
+}
+
+.skeleton-text-block .skeleton-text:last-child {
+  width: 40%;
+}
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeleton-avatar-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+}
+
+.skeleton-card {
+  overflow: hidden;
+}
+
+.skeleton-card-image {
+  margin-bottom: 16px;
+}
+
+.skeleton-card-content {
+  padding: 0 16px 16px;
+}
+
+.skeleton-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.skeleton-post {
+  padding: 16px;
+}
+
+.skeleton-post-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.skeleton-post-meta {
+  flex: 1;
+}
+
+.skeleton-post-meta .skeleton-name {
+  height: 18px;
+  width: 120px;
+  margin-bottom: 4px;
+}
+
+.skeleton-post-content {
+  margin-bottom: 16px;
+}
+
+.skeleton-post-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.skeleton-profile {
+  padding: 24px 16px;
+}
+
+.skeleton-profile-header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.skeleton-profile-info {
+  flex: 1;
+}
+
+.skeleton-profile-info .skeleton-name {
+  height: 24px;
+  width: 150px;
+  margin-bottom: 8px;
+}
+
+.skeleton-profile-info .skeleton-bio {
+  margin-bottom: 16px;
+}
+
+.skeleton-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.skeleton-list-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.skeleton-list-item:last-child {
+  border-bottom: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .skeleton-card-image .skeleton {
+    height: 150px !important;
+  }
+
+  .skeleton-profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .skeleton-stats {
+    justify-content: center;
+  }
+}

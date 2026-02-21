@@ -498,9 +498,9 @@ export default function RestaurantsPage() {
             {items.map((r) => (
               <div key={r.id} className="restaurant-card-wrapper">
                 <div className="restaurant-card">
-                  {r.is_featured && (
+                  {r.is_featured ? (
                     <div className="restaurant-featured-badge">Nổi bật</div>
-                  )}
+                  ) : null}
                   <Link
                     to={`/restaurants/${r.id}`}
                     style={{ textDecoration: "none", color: "inherit", display: "block" }}
@@ -532,7 +532,7 @@ export default function RestaurantsPage() {
                             <FaDollarSign /> {r.price_range}
                           </span>
                         )}
-                        {r.distance_km && (
+                        {r.distance_km != null && (
                           <span className="restaurant-card-meta-item">
                             <FaLocationArrow /> {r.distance_km} km
                           </span>
@@ -540,6 +540,11 @@ export default function RestaurantsPage() {
                       </div>
                       {r.address && (
                         <div className="restaurant-card-address">{r.address}</div>
+                      )}
+                      {r.description && (
+                        <div className="restaurant-card-address" style={{ marginTop: 4, color: "var(--muted)", fontStyle: "italic", fontSize: "13px" }}>
+                          {r.description.length > 80 ? r.description.substring(0, 80) + "..." : r.description}
+                        </div>
                       )}
                       {r.avg_rating && (
                         <div className="restaurant-card-rating">
