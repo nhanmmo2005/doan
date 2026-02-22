@@ -12,6 +12,7 @@ export default function ReviewCommentBox({ reviewId }) {
   const [replyContent, setReplyContent] = useState("");
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [reportNode, setReportNode] = useState(null);
+  const [expandedReplies, setExpandedReplies] = useState(new Set());
   const me = getUser();
 
   useEffect(() => {
@@ -29,6 +30,27 @@ export default function ReviewCommentBox({ reviewId }) {
       console.error("Load review comments error:", e);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadAllReplies(commentId) {
+    try {
+      const res = await http.get(`/api/reviews/${reviewId}/comments/${commentId}/replies`);
+      setComments((prev) =>
+        prev.map((c) => {
+          if (c.id === commentId) {
+            return { ...c, replies: res.data };
+          }
+          return c;
+        })
+      );
+      setExpandedReplies((prev) => {
+        const next = new Set(prev);
+        next.add(commentId);
+        return next;
+      });
+    } catch (e) {
+      console.error("Load replies error:", e);
     }
   }
 
@@ -63,6 +85,8 @@ export default function ReviewCommentBox({ reviewId }) {
     const canManage = me && (me.id === node.user_id || me.role === "admin");
     const isReplying = replyingTo === node.id;
     const isMenuOpen = activeMenuId === node.id;
+    const isExpanded = expandedReplies.has(node.id);
+    const hasMoreReplies = node.reply_count > (node.replies?.length || 0);
 
     return (
       <div key={node.id} className="review-comment-item" style={{ marginLeft: depth * 24 }}>
@@ -131,17 +155,20 @@ export default function ReviewCommentBox({ reviewId }) {
           </div>
         </div>
         <div className="review-comment-content">{node.content}</div>
-        {me && (
-          <Button
-            type="button"
-            className="review-comment-reply-btn"
-            variant="secondary"
-            size="sm"
-            onClick={() => setReplyingTo(isReplying ? null : node.id)}
-          >
-            <FaReply /> Trả lời
-          </Button>
-        )}
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          {me && (
+            <Button
+              type="button"
+              className="review-comment-reply-btn"
+              variant="secondary"
+              size="sm"
+              onClick={() => setReplyingTo(isReplying ? null : node.id)}
+            >
+              <FaReply /> Trả lời
+            </Button>
+          )}
+        </div>
+
         {isReplying && (
           <div className="review-comment-reply-form">
             <textarea
@@ -188,7 +215,55 @@ export default function ReviewCommentBox({ reviewId }) {
             </div>
           </div>
         )}
-        {node.replies && node.replies.length > 0 && (
+
+        {/* Nút Xem phản hồi */}
+        {node.parent_id === null && node.reply_count > 0 && (
+          <div className="review-comment-expand-replies">
+            {!isExpanded && hasMoreReplies ? (
+              <button
+                type="button"
+                className="btn-expand-replies"
+                onClick={() => loadAllReplies(node.id)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--primary)",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  padding: "4px 0",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6
+                }}
+              >
+                <span style={{ width: 20, height: 1, background: "var(--border)" }} />
+                Xem {node.reply_count} phản hồi
+              </button>
+            ) : isExpanded ? (
+              <button
+                type="button"
+                onClick={() => setExpandedReplies(prev => {
+                  const n = new Set(prev);
+                  n.delete(node.id);
+                  return n;
+                })}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--muted)",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  padding: "4px 0"
+                }}
+              >
+                Ẩn phản hồi
+              </button>
+            ) : null}
+          </div>
+        )}
+
+        {node.replies && node.replies.length > 0 && (isExpanded || node.parent_id !== null) && (
           <div className="review-comment-replies">
             {node.replies.map((reply) => renderComment(reply, depth + 1))}
           </div>

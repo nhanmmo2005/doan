@@ -241,13 +241,17 @@ router.post("/", auth, async (req, res) => {
 router.get("/:id/comments", optionalAuth, async (req, res) => {
   try {
     const reviewId = Number(req.params.id);
-    
+
+    const limitReplies = Math.min(Number(req.query.limitReplies) || 3, 20); // số reply preview
+
     // Check if table exists
     try {
+      // Lấy toàn bộ comments + reply_count cho mỗi comment
       const [comments] = await pool.query(
         `SELECT 
           rc.id, rc.review_id, rc.user_id, rc.parent_id, rc.content, rc.created_at,
-          u.name AS author_name, u.avatar_url AS author_avatar
+          u.name AS author_name, u.avatar_url AS author_avatar,
+          COALESCE((SELECT COUNT(*) FROM review_comments r2 WHERE r2.parent_id = rc.id), 0) AS reply_count
         FROM review_comments rc
         JOIN users u ON u.id = rc.user_id
         WHERE rc.review_id = ?
@@ -255,23 +259,37 @@ router.get("/:id/comments", optionalAuth, async (req, res) => {
         [reviewId]
       );
 
-      // Build tree structure
-      function buildTree(items, parentId = null) {
-        return items
-          .filter((item) => {
-            if (parentId === null) {
-              return item.parent_id === null;
-            }
-            return item.parent_id === parentId;
-          })
-          .map((item) => ({
-            ...item,
-            replies: buildTree(items, item.id),
-          }));
+      if (!comments.length) return res.json([]);
+
+      // Group replies by parent_id
+      const repliesByParent = new Map();
+      const roots = [];
+
+      for (const c of comments) {
+        const node = {
+          ...c,
+          reply_count: Number(c.reply_count) || 0,
+          replies: [],
+        };
+
+        if (node.parent_id == null) {
+          roots.push(node);
+        } else {
+          if (!repliesByParent.has(node.parent_id)) repliesByParent.set(node.parent_id, []);
+          repliesByParent.get(node.parent_id).push(node);
+        }
       }
 
-      const tree = buildTree(comments);
-      res.json(tree);
+      // Gắn preview replies cho mỗi root comment
+      const result = roots.map((root) => {
+        const allReplies = repliesByParent.get(root.id) || [];
+        return {
+          ...root,
+          replies: allReplies.slice(0, limitReplies),
+        };
+      });
+
+      res.json(result);
     } catch (tableError) {
       // Table might not exist yet
       if (tableError.code === "ER_NO_SUCH_TABLE") {
@@ -281,6 +299,45 @@ router.get("/:id/comments", optionalAuth, async (req, res) => {
     }
   } catch (e) {
     console.error("GET REVIEW COMMENTS ERROR:", e);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+/**
+ * GET /api/reviews/:id/comments/:commentId/replies
+ * Lấy replies của 1 comment (phục vụ nút "Xem X phản hồi")
+ */
+router.get("/:id/comments/:commentId/replies", optionalAuth, async (req, res) => {
+  try {
+    const reviewId = Number(req.params.id);
+    const commentId = Number(req.params.commentId);
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const offset = Math.max(Number(req.query.offset) || 0, 0);
+
+    // Check if table exists
+    try {
+      const [rows] = await pool.query(
+        `SELECT
+          rc.id, rc.review_id, rc.user_id, rc.parent_id, rc.content, rc.created_at,
+          u.name AS author_name, u.avatar_url AS author_avatar,
+          0 AS reply_count
+        FROM review_comments rc
+        JOIN users u ON u.id = rc.user_id
+        WHERE rc.review_id = ? AND rc.parent_id = ?
+        ORDER BY rc.created_at ASC
+        LIMIT ? OFFSET ?`,
+        [reviewId, commentId, limit, offset]
+      );
+
+      res.json(rows || []);
+    } catch (tableError) {
+      if (tableError.code === "ER_NO_SUCH_TABLE") {
+        return res.json([]);
+      }
+      throw tableError;
+    }
+  } catch (e) {
+    console.error("GET REVIEW REPLIES ERROR:", e);
     res.status(500).json({ msg: "Server error" });
   }
 });

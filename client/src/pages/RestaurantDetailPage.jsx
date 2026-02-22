@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useLocation } from "react-router-dom";
 import AppLayout from "../components/AppLayout";
 import { http } from "../api/http";
 import { getUser } from "../auth";
 import { uploadMedia } from "../api/upload";
 import ReviewCommentBox from "../components/ReviewCommentBox";
+import RestaurantCommentBox from "../components/RestaurantCommentBox";
 import Lightbox from "../components/Lightbox";
 import {
   FaMapMarkerAlt,
@@ -801,6 +802,14 @@ export default function RestaurantDetailPage() {
           loadReviews();
           loadRestaurant();
         }} />
+
+        <div className="card" style={{ padding: 16, marginBottom: 16 }}>
+          <h2 style={{ margin: "0 0 16px 0", fontSize: 18, fontWeight: 900 }}>
+            Bình luận về quán
+          </h2>
+          <div className="hr" style={{ marginBottom: 16 }} />
+          <RestaurantCommentBox restaurantId={restaurant.id} />
+        </div>
 
         <div className="card" style={{ padding: 16 }}>
           <h2 style={{ margin: "0 0 16px 0", fontSize: 18, fontWeight: 900 }}>

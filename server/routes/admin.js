@@ -1000,15 +1000,15 @@ router.patch("/reports/:id/resolve", auth, adminOnly, async (req, res) => {
           await connection.query("UPDATE posts SET visibility = 'hidden' WHERE id = ?", [target_id]);
         } else if (target_type === "message") {
           await connection.query("UPDATE chat_messages SET status = 'deleted' WHERE id = ?", [target_id]);
+        } else if (target_type === "restaurant_comment") {
+          // No direct visibility field, maybe skip or implement soft delete
         }
-        // Các loại khác (comment, eating_plan) không có field hide riêng biệt trong logic hiện tại nên dùng logic mặc định
       } else if (action === "delete") {
         if (target_type === "post") {
           await connection.query("DELETE FROM posts WHERE id = ?", [target_id]);
         } else if (target_type === "eating_plan") {
           await connection.query("UPDATE eating_plans SET status = 'deleted' WHERE id = ?", [target_id]);
         } else if (target_type === "post_comment") {
-          // Xoá media và replies tương tự route comments.js
           await connection.query(
             "DELETE cm FROM comment_media cm JOIN post_comments c ON c.id = cm.comment_id WHERE c.id = ? OR c.parent_id = ?",
             [target_id, target_id]
@@ -1019,6 +1019,8 @@ router.patch("/reports/:id/resolve", auth, adminOnly, async (req, res) => {
           await connection.query("DELETE FROM review_comments WHERE id = ?", [target_id]);
         } else if (target_type === "eating_plan_comment") {
           await connection.query("DELETE FROM eating_plan_comments WHERE id = ?", [target_id]);
+        } else if (target_type === "restaurant_comment") {
+          await connection.query("DELETE FROM restaurant_comments WHERE id = ?", [target_id]);
         } else if (target_type === "message") {
           await connection.query("UPDATE chat_messages SET status = 'deleted' WHERE id = ?", [target_id]);
         }
@@ -1038,7 +1040,7 @@ router.patch("/reports/:id/resolve", auth, adminOnly, async (req, res) => {
 
 /**
  * GET /api/admin/reports/resolve-context/:type/:id
- * Tìm ngữ cảnh của nội dung bị báo cáo (ví dụ: comment này thuộc post nào)
+ * Tìm ngữ cảnh của nội dung bị báo cáo
  */
 router.get("/reports/resolve-context/:type/:id", auth, adminOnly, async (req, res) => {
   try {
@@ -1054,6 +1056,12 @@ router.get("/reports/resolve-context/:type/:id", auth, adminOnly, async (req, re
     } else if (type === "eating_plan_comment") {
       const [rows] = await pool.query("SELECT eating_plan_id FROM eating_plan_comments WHERE id = ?", [targetId]);
       if (rows.length > 0) return res.json({ eatingPlanId: rows[0].eating_plan_id });
+    } else if (type === "restaurant_comment") {
+      const [rows] = await pool.query("SELECT restaurant_id FROM restaurant_comments WHERE id = ?", [targetId]);
+      if (rows.length > 0) return res.json({ restaurantId: rows[0].restaurant_id });
+    } else if (type === "restaurant_comment") {
+      const [rows] = await pool.query("SELECT restaurant_id FROM restaurant_comments WHERE id = ?", [targetId]);
+      if (rows.length > 0) return res.json({ restaurantId: rows[0].restaurant_id });
     } else if (type === "message") {
       const [rows] = await pool.query("SELECT room_id FROM chat_messages WHERE id = ?", [targetId]);
       if (rows.length > 0) return res.json({ roomId: rows[0].room_id });
@@ -1091,6 +1099,9 @@ router.get("/reports/target-preview/:type/:id", auth, adminOnly, async (req, res
     } else if (type === "eating_plan_comment") {
       const [rows] = await pool.query("SELECT content FROM eating_plan_comments WHERE id = ?", [targetId]);
       if (rows.length > 0) text = rows[0].content;
+    } else if (type === "restaurant_comment") {
+      const [rows] = await pool.query("SELECT content FROM restaurant_comments WHERE id = ?", [targetId]);
+      if (rows.length > 0) text = rows[0].content;
     } else if (type === "message") {
       const [rows] = await pool.query("SELECT content FROM chat_messages WHERE id = ?", [targetId]);
       if (rows.length > 0) text = rows[0].content;
@@ -1100,7 +1111,6 @@ router.get("/reports/target-preview/:type/:id", auth, adminOnly, async (req, res
       return res.status(404).json({ msg: "Nội dung không tồn tại hoặc đã bị xóa" });
     }
 
-    // Cắt 200 ký tự
     const snippet = text.length > 200 ? text.substring(0, 200) + "..." : text;
     res.json({ text: snippet });
   } catch (e) {

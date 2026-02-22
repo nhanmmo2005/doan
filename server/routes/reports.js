@@ -26,6 +26,7 @@ router.post("/", auth, async (req, res) => {
       "review_comment",
       "eating_plan_comment",
       "message",
+      "restaurant_comment",
     ];
 
     if (!validTypes.includes(target_type)) {
