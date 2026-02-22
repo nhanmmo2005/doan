@@ -547,6 +547,10 @@ function ReviewItem({ review, onDelete }) {
 
 export default function RestaurantDetailPage() {
   const { id } = useParams();
+  const location = useLocation();
+  const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const focusRestaurantCommentId = query.get("focus_restaurant_comment");
+
   const [restaurant, setRestaurant] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -808,7 +812,7 @@ export default function RestaurantDetailPage() {
             Bình luận về quán
           </h2>
           <div className="hr" style={{ marginBottom: 16 }} />
-          <RestaurantCommentBox restaurantId={restaurant.id} />
+          <RestaurantCommentBox restaurantId={restaurant.id} focusCommentId={focusRestaurantCommentId} />
         </div>
 
         <div className="card" style={{ padding: 16 }}>

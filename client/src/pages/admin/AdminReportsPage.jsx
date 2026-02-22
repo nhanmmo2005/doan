@@ -73,6 +73,7 @@ export default function AdminReportsPage() {
     review_comment: "Bình luận (Review)",
     eating_plan_comment: "Bình luận (Kèo)",
     message: "Tin nhắn chat",
+    restaurant_comment: "Bình luận (Quán)",
   };
 
   const reasonLabels = {
@@ -102,6 +103,8 @@ export default function AdminReportsPage() {
         url = `/keo-an?focus=${ctx.eatingPlanId}&focus_comment=${r.target_id}`;
       } else if (r.target_type === "message") {
         url = `/chat?room=${ctx.roomId}&focus_message=${r.target_id}`;
+      } else if (r.target_type === "restaurant_comment") {
+        url = `/restaurants/${ctx.restaurantId}?focus_restaurant_comment=${r.target_id}`;
       }
 
       if (url) {
