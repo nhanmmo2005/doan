@@ -20,20 +20,20 @@ const transporter = nodemailer.createTransport({
 // Helper: Gửi OTP qua email
 async function sendOTPEmail(email, otp) {
   const mailOptions = {
-    from: process.env.EMAIL_FROM || `"Foodbook" <${process.env.SMTP_USER}>`,
+    from: process.env.EMAIL_FROM || `"DNFoodie" <${process.env.SMTP_USER}>`,
     to: email,
-    subject: "Mã xác thực đăng ký tài khoản Foodbook",
+    subject: "Mã xác thực đăng ký tài khoản DNFoodie",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
         <h2 style="color: #ff4d4f; text-align: center;">Xác thực Email của bạn</h2>
         <p>Chào bạn,</p>
-        <p>Bạn đang thực hiện đăng ký tài khoản trên <strong>Foodbook</strong>. Vui lòng sử dụng mã OTP dưới đây để hoàn tất quá trình xác thực:</p>
+        <p>Bạn đang thực hiện đăng ký tài khoản trên <strong>DNFoodie</strong>. Vui lòng sử dụng mã OTP dưới đây để hoàn tất quá trình xác thực:</p>
         <div style="background-color: #f9f9f9; padding: 20px; text-align: center; border-radius: 5px; margin: 20px 0;">
           <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #333;">${otp}</span>
         </div>
         <p style="color: #666; font-size: 14px;">Mã này có hiệu lực trong vòng ${process.env.EMAIL_OTP_EXPIRE_MINUTES || 10} phút. Nếu không phải bạn yêu cầu, vui lòng bỏ qua email này.</p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-        <p style="text-align: center; color: #999; font-size: 12px;">© 2026 Foodbook Team</p>
+        <p style="text-align: center; color: #999; font-size: 12px;">© 2026 DNFoodie Team</p>
       </div>
     `,
   };
