@@ -585,6 +585,126 @@ export default function AdminPage() {
     if (activeTab === "banners") loadBanners();
   }, [activeTab]);
 
+  function renderRestaurantFormModal() {
+    if (!showRestaurantForm) return null;
+
+    return (
+      <div className="modal-backdrop" onClick={() => setShowRestaurantForm(false)}>
+        <div className="modal-content admin-restaurant-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="admin-restaurant-modal__header">
+            <h2>{editingRestaurant ? "Sửa quán ăn" : "Thêm quán ăn"}</h2>
+            <button type="button" className="admin-restaurant-modal__close" onClick={() => setShowRestaurantForm(false)}>
+              &times;
+            </button>
+          </div>
+
+          <div className="admin-restaurant-modal__body">
+            <div className="admin-restaurant-modal__grid">
+              <div>
+                <label className="form-label">Tên quán *</label>
+                <input className="form-input" value={restaurantForm.name} onChange={(e) => setRestaurantForm((prev) => ({ ...prev, name: e.target.value }))} />
+              </div>
+              <div>
+                <label className="form-label">Loại hình</label>
+                <input className="form-input" value={restaurantForm.type} onChange={(e) => setRestaurantForm((prev) => ({ ...prev, type: e.target.value }))} placeholder="VD: Lẩu, Nướng, Hải sản..." />
+              </div>
+            </div>
+
+            <div className="admin-restaurant-modal__grid">
+              <div>
+                <label className="form-label">Khu vực</label>
+                <input className="form-input" value={restaurantForm.area} onChange={(e) => setRestaurantForm((prev) => ({ ...prev, area: e.target.value }))} placeholder="VD: Quận 1" />
+              </div>
+              <div>
+                <label className="form-label">Mức giá</label>
+                <input className="form-input" value={restaurantForm.price_range} onChange={(e) => setRestaurantForm((prev) => ({ ...prev, price_range: e.target.value }))} placeholder="VD: 100k - 300k" />
+              </div>
+            </div>
+
+            <div>
+              <label className="form-label">Địa chỉ</label>
+              <input className="form-input" value={restaurantForm.address} onChange={(e) => setRestaurantForm((prev) => ({ ...prev, address: e.target.value }))} />
+            </div>
+
+            <div>
+              <label className="form-label">Mô tả</label>
+              <textarea className="form-textarea" value={restaurantForm.description} onChange={(e) => setRestaurantForm((prev) => ({ ...prev, description: e.target.value }))} />
+            </div>
+
+            <div>
+              <label className="form-label">Khung giờ phù hợp</label>
+              <select className="form-input" value={restaurantForm.meal_time} onChange={(e) => setRestaurantForm((prev) => ({ ...prev, meal_time: e.target.value }))}>
+                <option value="all">Cả ngày</option>
+                <option value="breakfast">Sáng</option>
+                <option value="lunch">Trưa</option>
+                <option value="dinner">Tối</option>
+                <option value="night">Khuya</option>
+              </select>
+            </div>
+
+            <div>
+              <div className="admin-restaurant-modal__row-head">
+                <label className="form-label">Vị trí (tọa độ)</label>
+                <Button type="button" variant="secondary" size="sm" onClick={getCurrentLocation}>
+                  <FaMapMarkerAlt /> Lấy vị trí hiện tại
+                </Button>
+              </div>
+              <div className="admin-restaurant-modal__coord-grid">
+                <input className="form-input" placeholder="Latitude" value={restaurantForm.latitude} onChange={(e) => setRestaurantForm((prev) => ({ ...prev, latitude: e.target.value }))} />
+                <input className="form-input" placeholder="Longitude" value={restaurantForm.longitude} onChange={(e) => setRestaurantForm((prev) => ({ ...prev, longitude: e.target.value }))} />
+              </div>
+            </div>
+
+            <div>
+              <label className="form-label">Ảnh quán ăn (tối đa 10 ảnh)</label>
+              <label className="admin-restaurant-modal__upload-zone">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ display: "none" }}
+                  onChange={(e) => handleMultipleImagesUpload(e.target.files)}
+                  disabled={uploadingImage}
+                />
+                <FaUpload size={24} color="var(--muted)" style={{ marginBottom: 8 }} />
+                <span>{uploadingImage ? "Đang tải ảnh..." : "Bấm chọn nhiều ảnh từ máy"}</span>
+              </label>
+
+              {restaurantForm.media?.length > 0 && (
+                <div className="admin-restaurant-modal__media-grid">
+                  {restaurantForm.media.map((url, idx) => (
+                    <div key={`${url}-${idx}`} className="admin-restaurant-modal__media-item">
+                      <img src={url} alt={`restaurant-${idx}`} className="admin-restaurant-modal__media-img" />
+                      <button type="button" onClick={() => removeRestaurantMedia(idx)} className="admin-restaurant-modal__media-remove">
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <label className="admin-restaurant-modal__featured-toggle">
+              <input
+                type="checkbox"
+                checked={restaurantForm.is_featured}
+                onChange={(e) => setRestaurantForm((prev) => ({ ...prev, is_featured: e.target.checked }))}
+              />
+              <span>Đánh dấu quán nổi bật</span>
+            </label>
+          </div>
+
+          <div className="admin-restaurant-modal__footer">
+            <Button type="button" onClick={() => setShowRestaurantForm(false)} variant="secondary" size="md">Hủy</Button>
+            <Button type="button" onClick={saveRestaurant} variant="primary" size="md" disabled={uploadingImage || !restaurantForm.name.trim()}>
+              {editingRestaurant ? "Cập nhật" : "Thêm mới"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: FaChartBar },
     { id: "posts", label: "Bài viết", icon: FaNewspaper },
@@ -1145,17 +1265,7 @@ export default function AdminPage() {
       </div>
 
       {/* Restaurant Form Modal */}
-      {showRestaurantForm && (
-        <RestaurantFormModal
-          show={showRestaurantForm}
-          onClose={() => setShowRestaurantForm(false)}
-          restaurant={editingRestaurant}
-          onSave={saveRestaurant}
-          uploadingImage={uploadingImage}
-          handleMultipleImagesUpload={handleMultipleImagesUpload}
-          removeRestaurantMedia={removeRestaurantMedia}
-        />
-      )}
+      {renderRestaurantFormModal()}
 
       {/* Banner Form Modal */}
       {showBannerForm && (
@@ -1235,7 +1345,7 @@ export default function AdminPage() {
                       </button>
                     </div>
                   )}
-                  <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", border: "2px dashed var(--border)", borderRadius: 12, cursor: "pointer", background: uploadingImage ? "rgba(0,0,0,0.02)" : "#fafafa" }}>
+                  <label className="admin-restaurant-modal__upload-zone">
                     <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleImageUpload(e.target.files[0], "banner")} disabled={uploadingImage} />
                     <FaUpload size={24} color="var(--muted)" style={{ marginBottom: 8 }} />
                     <span>{uploadingImage ? "Đang tải..." : "Bấm chọn ảnh từ máy"}</span>
