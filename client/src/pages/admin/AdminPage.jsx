@@ -722,7 +722,7 @@ export default function AdminPage() {
     <AppLayout>
       <div className="admin-page">
         <div className="admin-header">
-          <h1>🛠️ Admin Dashboard</h1>
+          <h1>Admin Dashboard</h1>
           <p>Quản lý toàn bộ hệ thống</p>
         </div>
 
